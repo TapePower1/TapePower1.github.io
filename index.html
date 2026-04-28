@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Распознавание текста с изображения | OCR</title>
+
+    <!-- Tesseract.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js">
+    </script>
+
+    <style>
+        :root {
+            --bg: #f4f6fb;
+            --card-bg: #ffffff;
+            --primary: #4f6ef7;
+            --primary-hover: #3b54d4;
+            --text: #2c2c2c;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+            --border-dashed: #c7cdd6;
+            --success: #10b981;
+            --success-bg: #ecfdf5;
+            --danger: #ef4444;
+            --danger-bg: #fef2f2;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 720px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: var(--shadow-lg);
+            padding: 36px 32px 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Заголовок */
+        .header {
+            text-align: center;
+        }
+        .header .icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+            border-radius: 16px;
+            margin-bottom: 12px;
+            font-size: 26px;
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            color: #1a1a2e;
+        }
+        .header p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-top: 2px;
+        }
+
+        /* Зона загрузки */
+        .upload-zone {
+            position: relative;
+            border: 2px dashed var(--border-dashed);
+            border-radius: var(--radius);
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: #fafbfc;
+            overflow: hidden;
+        }
+        .upload-zone:hover,
+        .upload-zone.drag-over {
+            border-color: var(--primary);
+            background: #f5f7ff;
+            box-shadow: 0 0 0 4px rgba(79, 110, 247, 0.07);
+        }
+        .upload-zone.drag-over {
+            border-style: solid;
+            background: #eef1ff;
+        }
+        .upload-zone.has-image {
+            border-style: solid;
+            border-color: var(--success);
+            background: var(--success-bg);
+            padding: 16px;
+        }
+        .upload-zone .upload-icon {
+            font-size: 42px;
+            margin-bottom: 10px;
+            display: block;
+            transition: var(--transition);
+        }
+        .upload-zone.has-image .upload-icon {
+            font-size: 0;
+            margin: 0;
+        }
+        .upload-zone .upload-text {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #374151;
+        }
+        .upload-zone .upload-hint {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+        .upload-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Превью изображения */
+        .preview-container {
+            display: none;
+            position: relative;
+            width: 100%;
+            max-height: 280px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            background: #f3f4f6;
+            border: 1px solid var(--border);
+        }
+        .preview-container.visible {
+            display: block;
+        }
+        .preview-container img {
+            width: 100%;
+            height: auto;
+            max-height: 280px;
+            object-fit: contain;
+            display: block;
+        }
+        .preview-container .remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            backdrop-filter: blur(4px);
+        }
+        .preview-container .remove-btn:hover {
+            background: rgba(239, 68, 68, 0.85);
+            transform: scale(1.08);
+        }
+
+        /* Кнопка распознавания */
+        .recognize-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px 20px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 0.2px;
+            box-shadow: 0 2px 8px rgba(79, 110, 247, 0.3);
+        }
+        .recognize-btn:hover:not(:disabled) {
+            background: var(--primary-hover);
+            box-shadow: 0 6px 18px rgba(79, 110, 247, 0.35);
+            transform: translateY(-1px);
+        }
+        .recognize-btn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+        .recognize-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .recognize-btn .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2.5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        .recognize-btn.loading .spinner {
+            display: inline-block;
+        }
+        .recognize-btn.loading .btn-text {
+            display: none;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Прогресс-бар */
+        .progress-container {
+            display: none;
+            margin-top: -8px;
+        }
+        .progress-container.visible {
+            display: block;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4f6ef7, #7c8cf8);
+            border-radius: 99px;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            font-size: 0.78rem;
+            color: var(--text-light);
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        /* Результат */
+        .result-container {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .result-container.visible {
+            display: flex;
+        }
+        .result-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .result-label span {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #374151;
+        }
+        .copy-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #f3f4f6;
+            border: 1px solid var(--border);
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            color: #4b5563;
+            white-space: nowrap;
+        }
+        .copy-btn:hover {
+            background: #e5e7eb;
+            border-color: #cbd5e1;
+        }
+        .copy-btn.copied {
+            background: var(--success-bg);
+            border-color: #a7f3d0;
+            color: #059669;
+        }
+        .result-textarea {
+            width: 100%;
+            min-height: 140px;
+            max-height: 360px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+            line-height: 1.55;
+            resize: vertical;
+            background: #fafbfc;
+            color: #1f2937;
+            transition: var(--transition);
+        }
+        .result-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.08);
+            background: #fff;
+        }
+
+        /* Сообщение */
+        .message {
+            display: none;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+        .message.error {
+            display: block;
+            background: var(--danger-bg);
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+        .message.info {
+            display: block;
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        /* Адаптив */
+        @media (max-width: 500px) {
+            .container {
+                padding: 24px 16px 20px;
+                gap: 18px;
+                border-radius: 20px;
+            }
+            .header h1 {
+                font-size: 1.35rem;
+            }
+            .upload-zone {
+                padding: 28px 14px;
+            }
+            .result-textarea {
+                min-height: 110px;
+                font-size: 0.82rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Заголовок -->
+        <div class="header">
+            <div class="icon">📷</div>
+            <h1>Распознавание текста</h1>
+            <p>Загрузите изображение — получите текст за секунды</p>
+        </div>
+
+        <!-- Зона загрузки -->
+        <div class="upload-zone" id="uploadZone">
+            <span class="upload-icon">🖼️</span>
+            <span class="upload-text">Выберите или перетащите картинку</span>
+            <span class="upload-hint">PNG, JPG, WEBP, GIF — до 20 МБ</span>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <!-- Превью -->
+        <div class="preview-container" id="previewContainer">
+            <img id="previewImage" src="" alt="Предпросмотр">
+            <button class="remove-btn" id="removeImageBtn" title="Удалить изображение">✕</button>
+        </div>
+
+        <!-- Кнопка распознавания -->
+        <button class="recognize-btn" id="recognizeBtn" disabled>
+            <span class="spinner"></span>
+            <span class="btn-text">🔍 Распознать текст</span>
+        </button>
+
+        <!-- Прогресс -->
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p class="progress-text" id="progressText">Подготовка...</p>
+        </div>
+
+        <!-- Сообщения -->
+        <div class="message" id="messageBox"></div>
+
+        <!-- Результат -->
+        <div class="result-container" id="resultContainer">
+            <div class="result-label">
+                <span>📝 Распознанный текст</span>
+                <button class="copy-btn" id="copyBtn">
+                    📋 <span id="copyBtnText">Копировать</span>
+                </button>
+            </div>
+            <textarea
+            class="result-textarea"
+            id="resultTextarea"
+            placeholder="Текст появится здесь..."
+            readonly
+        ></textarea>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // DOM-элементы
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const removeImageBtn = document.getElementById('removeImageBtn');
+        const recognizeBtn = document.getElementById('recognizeBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const messageBox = document.getElementById('messageBox');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultTextarea = document.getElementById('resultTextarea');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyBtnText = document.getElementById('copyBtnText');
+
+        let selectedFile = null;
+        let currentWorker = null; // для возможности отмены
+
+        // Сброс всего состояния
+        function resetAll() {
+            // Отмена текущего распознавания, если идёт
+            if (currentWorker) {
+                try { currentWorker.terminate(); } catch (e) { /* игнорируем */ }
+                currentWorker = null;
+            }
+            selectedFile = null;
+            fileInput.value = '';
+            previewImage.src = '';
+            previewContainer.classList.remove('visible');
+            uploadZone.classList.remove('has-image');
+            recognizeBtn.disabled = true;
+            recognizeBtn.classList.remove('loading');
+            progressContainer.classList.remove('visible');
+            progressFill.style.width = '0%';
+            progressText.textContent = 'Подготовка...';
+            messageBox.className = 'message';
+            messageBox.textContent = '';
+            resultContainer.classList.remove('visible');
+            resultTextarea.value = '';
+            copyBtn.classList.remove('copied');
+            copyBtnText.textContent = 'Копировать';
+        }
+
+        // Показать сообщение
+        function showMessage(text, type = 'error') {
+            messageBox.className = 'message ' + type;
+            messageBox.textContent = text;
+            // Автоскрытие информационных через 6 сек
+            if (type === 'info') {
+                setTimeout(() => {
+                    if (messageBox.textContent === text) {
+                        messageBox.className = 'message';
+                        messageBox.textContent = '';
+                    }
+                }, 6000);
+            }
+        }
+
+        function hideMessage() {
+            messageBox.className = 'message';
+            messageBox.textContent = '';
+        }
+
+        // Обработка выбранного файла
+        function handleFile(file) {
+            hideMessage();
+            // Валидация
+            if (!file) return;
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif',
+                'image/bmp', 'image/tiff'
+            ];
+            if (!validTypes.includes(file.type)) {
+                showMessage('⚠️ Пожалуйста, выберите изображение (PNG, JPG, WEBP, GIF и т.д.).', 'error');
+                return;
+            }
+            if (file.size > 20 * 1024 * 1024) {
+                showMessage('⚠️ Размер файла не должен превышать 20 МБ.', 'error');
+                return;
+            }
+
+            // Отмена предыдущего воркера
+            if (currentWorker) {
+                try { currentWorker.terminate(); } catch (e) {}
+                currentWorker = null;
+            }
+            recognizeBtn.classList.remove('loading');
+            progressContainer.classList.remove('visible');
+            resultContainer.classList.remove('visible');
+            resultTextarea.value = '';
+
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewContainer.classList.add('visible');
+                uploadZone.classList.add('has-image');
+                recognizeBtn.disabled = false;
+            };
+            reader.onerror = function() {
+                showMessage('⚠️ Не удалось прочитать файл.', 'error');
+                resetAll();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- Обработчики событий ---
+
+        // Клик по зоне загрузки (делегируем на input)
+        uploadZone.addEventListener('click', (e) => {
+            // Если клик был по кнопке удаления — не открываем выбор файла
+            if (e.target === removeImageBtn || removeImageBtn.contains(e.target)) return;
+            fileInput.click();
+        });
+
+        // Выбор файла через input
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        // Drag & Drop
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+        uploadZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Удаление изображения
+        removeImageBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            resetAll();
+            showMessage('Изображение удалено. Выберите новое.', 'info');
+        });
+
+        // Кнопка распознавания
+        recognizeBtn.addEventListener('click', () => {
+            if (!selectedFile || recognizeBtn.disabled || recognizeBtn.classList.contains('loading'))
+                return;
+
+            hideMessage();
+            resultContainer.classList.remove('visible');
+            resultTextarea.value = '';
+            copyBtn.classList.remove('copied');
+            copyBtnText.textContent = 'Копировать';
+
+            // Показываем прогресс
+            recognizeBtn.classList.add('loading');
+            recognizeBtn.disabled = true;
+            progressContainer.classList.add('visible');
+            progressFill.style.width = '0%';
+            progressText.textContent = 'Загрузка языковой модели...';
+
+            // Запуск Tesseract
+            const worker = Tesseract.createWorker({
+                logger: (m) => {
+                    if (m.status === 'recognizing text') {
+                        const percent = Math.round((m.progress || 0) * 100);
+                        progressFill.style.width = percent + '%';
+                        progressText.textContent = `Распознавание: ${percent}%`;
+                    } else if (m.status === 'loading tesseract core' || m.status ===
+                        'initializing tesseract') {
+                        progressText.textContent = 'Инициализация движка...';
+                        progressFill.style.width = '15%';
+                    } else if (m.status === 'loading language traineddata') {
+                        progressText.textContent = 'Загрузка языковых данных...';
+                        progressFill.style.width = '30%';
+                    } else if (m.status === 'initializing api') {
+                        progressText.textContent = 'Подготовка API...';
+                        progressFill.style.width = '50%';
+                    }
+                }
+            });
+
+            currentWorker = worker;
+
+            (async () => {
+                try {
+                    await worker.load();
+                    // Поддержка русского и английского
+                    await worker.loadLanguage('rus+eng');
+                    await worker.initialize('rus+eng');
+
+                    progressText.textContent = 'Идёт распознавание...';
+                    progressFill.style.width = '60%';
+
+                    const { data: { text } } = await worker.recognize(selectedFile);
+
+                    // Завершение
+                    progressFill.style.width = '100%';
+                    progressText.textContent = 'Готово!';
+                    await worker.terminate();
+                    currentWorker = null;
+
+                    // Показываем результат
+                    const trimmed = text.trim();
+                    resultTextarea.value = trimmed || '(текст не найден)';
+                    resultContainer.classList.add('visible');
+                    recognizeBtn.classList.remove('loading');
+                    recognizeBtn.disabled = false;
+                    progressContainer.classList.remove('visible');
+
+                    if (!trimmed) {
+                        showMessage(
+                            'ℹ️ Текст не обнаружен. Попробуйте изображение с более чётким текстом.',
+                            'info');
+                    } else {
+                        hideMessage();
+                    }
+                } catch (err) {
+                    console.error('OCR error:', err);
+                    if (currentWorker === worker) {
+                        try { await worker.terminate(); } catch (e) {}
+                        currentWorker = null;
+                    }
+                    recognizeBtn.classList.remove('loading');
+                    recognizeBtn.disabled = false;
+                    progressContainer.classList.remove('visible');
+                    showMessage('❌ Ошибка распознавания: ' + (err.message ||
+                        'неизвестная ошибка'), 'error');
+                }
+            })();
+        });
+
+        // Копирование текста
+        copyBtn.addEventListener('click', async () => {
+            const text = resultTextarea.value;
+            if (!text || text === '(текст не найден)') {
+                showMessage('Нечего копировать.', 'info');
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(text);
+                copyBtn.classList.add('copied');
+                copyBtnText.textContent = 'Скопировано ✓';
+                setTimeout(() => {
+                    copyBtn.classList.remove('copied');
+                    copyBtnText.textContent = 'Копировать';
+                }, 2000);
+                hideMessage();
+            } catch (err) {
+                // Фолбэк для старых браузеров
+                resultTextarea.select();
+                resultTextarea.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand('copy');
+                    copyBtn.classList.add('copied');
+                    copyBtnText.textContent = 'Скопировано ✓';
+                    setTimeout(() => {
+                        copyBtn.classList.remove('copied');
+                        copyBtnText.textContent = 'Копировать';
+                    }, 2000);
+                    hideMessage();
+                } catch (e) {
+                    showMessage('Не удалось скопировать. Выделите текст вручную.', 'error');
+                }
+            }
+        });
+
+        // Инициализация: кнопка неактивна
+        recognizeBtn.disabled = true;
+    })();
+</script>
+</body>
+</html>
