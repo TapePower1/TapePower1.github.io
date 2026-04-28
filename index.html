@@ -3,504 +3,761 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Распознавание текста с изображения | OCR</title>
-    <!-- Tesseract.js v5 -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <title>Шашки — расширенная версия</title>
     <style>
-        :root {
-            --bg: #f4f6fb;
-            --card-bg: #ffffff;
-            --primary: #4f6ef7;
-            --primary-hover: #3b54d4;
-            --text: #2c2c2c;
-            --text-light: #6b7280;
-            --border: #e5e7eb;
-            --border-dashed: #c7cdd6;
-            --success: #10b981;
-            --success-bg: #ecfdf5;
-            --danger: #ef4444;
-            --danger-bg: #fef2f2;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-            --shadow: 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
-            --shadow-lg: 0 12px 32px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.05);
-            --radius: 16px;
-            --radius-sm: 10px;
-            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--bg);
-            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #2d2d2d;
+            color: #f0d9b5;
             display: flex;
-            align-items: center;
             justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
             padding: 20px;
-            color: var(--text);
-            line-height: 1.6;
         }
-        .container {
-            width: 100%;
-            max-width: 720px;
-            background: var(--card-bg);
-            border-radius: 24px;
-            box-shadow: var(--shadow-lg);
-            padding: 36px 32px 32px;
+
+        .game-container {
+            background: #1e1e1e;
+            padding: 20px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .board-section {
             display: flex;
             flex-direction: column;
-            gap: 24px;
-        }
-        .header { text-align: center; }
-        .header .icon {
-            display: inline-flex;
             align-items: center;
+        }
+
+        #checkersBoard {
+            display: grid;
+            grid-template-columns: repeat(8, 80px);
+            grid-template-rows: repeat(8, 80px);
+            border: 4px solid #b58863;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .square {
+            width: 80px;
+            height: 80px;
+            display: flex;
             justify-content: center;
-            width: 52px; height: 52px;
-            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
-            border-radius: 16px;
-            margin-bottom: 12px;
-            font-size: 26px;
-        }
-        .header h1 {
-            font-size: 1.6rem;
-            font-weight: 700;
-            letter-spacing: -0.4px;
-            color: #1a1a2e;
-        }
-        .header p { color: var(--text-light); font-size: 0.9rem; margin-top: 2px; }
-        .upload-zone {
+            align-items: center;
             position: relative;
-            border: 2px dashed var(--border-dashed);
-            border-radius: var(--radius);
-            padding: 40px 20px;
-            text-align: center;
+        }
+
+        .dark-sq {
+            background-color: #b58863;
+        }
+
+        .light-sq {
+            background-color: #f0d9b5;
+        }
+
+        .selected-cell {
+            box-shadow: inset 0 0 0 4px #ffeb3b;
+            z-index: 2;
+        }
+
+        .highlight-move {
+            box-shadow: inset 0 0 0 4px #4caf50;
             cursor: pointer;
-            transition: var(--transition);
-            background: #fafbfc;
-            overflow: hidden;
         }
-        .upload-zone:hover, .upload-zone.drag-over {
-            border-color: var(--primary);
-            background: #f5f7ff;
-            box-shadow: 0 0 0 4px rgba(79,110,247,0.07);
+
+        .piece {
+            width: 70%;
+            height: 70%;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            transition: transform 0.1s;
         }
-        .upload-zone.drag-over { border-style: solid; background: #eef1ff; }
-        .upload-zone.has-image {
-            border-style: solid;
-            border-color: var(--success);
-            background: var(--success-bg);
-            padding: 16px;
+
+        .white-piece {
+            background: radial-gradient(circle at 40% 40%, #ffffff, #cccccc);
         }
-        .upload-zone .upload-icon { font-size: 42px; margin-bottom: 10px; display: block; transition: var(--transition); }
-        .upload-zone.has-image .upload-icon { font-size: 0; margin: 0; }
-        .upload-zone .upload-text { font-weight: 600; font-size: 1rem; color: #374151; }
-        .upload-zone .upload-hint { font-size: 0.8rem; color: var(--text-light); margin-top: 4px; }
-        .upload-zone input[type="file"] {
-            position: absolute; inset: 0; opacity: 0; cursor: pointer;
+
+        .black-piece {
+            background: radial-gradient(circle at 40% 40%, #555555, #111111);
         }
-        .preview-container {
-            display: none;
+
+        .king {
             position: relative;
+        }
+
+        .king::after {
+            content: "♛";
+            font-size: 32px;
+            color: gold;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-shadow: 0 0 6px black;
+        }
+
+        .info-panel {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 12px;
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #checkersStatus {
+            font-weight: bold;
+            font-size: 1.1em;
+            background: #3d3d3d;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .timer {
+            font-size: 1.4em;
+            background: #3d3d3d;
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        .move-history-title, .game-history-title {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        #moveHistoryList {
+            background: #3d3d3d;
+            border-radius: 8px;
+            padding: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9em;
+            list-style: none;
+        }
+
+        #moveHistoryList li {
+            padding: 2px 0;
+            border-bottom: 1px solid #555;
+        }
+
+        #gameHistoryList {
+            background: #3d3d3d;
+            border-radius: 8px;
+            padding: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+        }
+
+        .game-entry {
+            padding: 5px;
+            border-bottom: 1px solid #555;
+            cursor: pointer;
+        }
+
+        .game-entry:hover {
+            background: #4a4a4a;
+        }
+
+        button {
+            background: #b58863;
+            color: #1e1e1e;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.95em;
+        }
+
+        button:hover {
+            background: #c69c6d;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-height: 280px;
-            border-radius: var(--radius-sm);
-            overflow: hidden;
-            background: #f3f4f6;
-            border: 1px solid var(--border);
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
         }
-        .preview-container.visible { display: block; }
-        .preview-container img {
-            width: 100%; height: auto; max-height: 280px; object-fit: contain; display: block;
+
+        .modal-content {
+            background: #2d2d2d;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 30px black;
         }
-        .preview-container .remove-btn {
-            position: absolute; top: 8px; right: 8px;
-            background: rgba(0,0,0,0.6); color: #fff; border: none;
-            border-radius: 50%; width: 32px; height: 32px; font-size: 16px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: var(--transition); backdrop-filter: blur(4px);
+
+        .modal-content h3 {
+            margin-bottom: 20px;
         }
-        .preview-container .remove-btn:hover {
-            background: rgba(239,68,68,0.85); transform: scale(1.08);
+
+        .time-options {
+            margin: 15px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-start;
         }
-        .recognize-btn {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            width: 100%; padding: 14px 20px; background: var(--primary); color: #fff;
-            border: none; border-radius: var(--radius-sm); font-size: 1rem;
-            font-weight: 600; cursor: pointer; transition: var(--transition);
-            letter-spacing: 0.2px; box-shadow: 0 2px 8px rgba(79,110,247,0.3);
-        }
-        .recognize-btn:hover:not(:disabled) {
-            background: var(--primary-hover); box-shadow: 0 6px 18px rgba(79,110,247,0.35);
-            transform: translateY(-1px);
-        }
-        .recognize-btn:active:not(:disabled) { transform: scale(0.98); }
-        .recognize-btn:disabled {
-            opacity: 0.55; cursor: not-allowed; box-shadow: none; transform: none;
-        }
-        .recognize-btn .spinner {
-            display: none; width: 20px; height: 20px;
-            border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff;
-            border-radius: 50%; animation: spin 0.7s linear infinite;
-        }
-        .recognize-btn.loading .spinner { display: inline-block; }
-        .recognize-btn.loading .btn-text { display: none; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .progress-container { display: none; margin-top: -8px; }
-        .progress-container.visible { display: block; }
-        .progress-bar {
-            width: 100%; height: 6px; background: #e5e7eb; border-radius: 99px; overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%; width: 0%; background: linear-gradient(90deg, #4f6ef7, #7c8cf8);
-            border-radius: 99px; transition: width 0.3s ease;
-        }
-        .progress-text {
-            font-size: 0.78rem; color: var(--text-light); margin-top: 6px; text-align: center;
-        }
-        .result-container { display: none; flex-direction: column; gap: 10px; }
-        .result-container.visible { display: flex; }
-        .result-label {
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .result-label span { font-weight: 600; font-size: 0.95rem; color: #374151; }
-        .copy-btn {
-            display: inline-flex; align-items: center; gap: 5px;
-            background: #f3f4f6; border: 1px solid var(--border);
-            padding: 7px 14px; border-radius: 8px; font-size: 0.82rem;
-            font-weight: 500; cursor: pointer; transition: var(--transition);
-            color: #4b5563; white-space: nowrap;
-        }
-        .copy-btn:hover { background: #e5e7eb; border-color: #cbd5e1; }
-        .copy-btn.copied {
-            background: var(--success-bg); border-color: #a7f3d0; color: #059669;
-        }
-        .result-textarea {
-            width: 100%; min-height: 140px; max-height: 360px;
-            padding: 14px 16px; border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-            font-size: 0.9rem; line-height: 1.55; resize: vertical;
-            background: #fafbfc; color: #1f2937; transition: var(--transition);
-        }
-        .result-textarea:focus {
-            outline: none; border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79,110,247,0.08); background: #fff;
-        }
-        .message {
-            display: none; padding: 12px 16px; border-radius: var(--radius-sm);
-            font-size: 0.88rem; font-weight: 500;
-        }
-        .message.error { display: block; background: var(--danger-bg); color: #b91c1c; border: 1px solid #fecaca; }
-        .message.info { display: block; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-        @media (max-width: 500px) {
-            .container { padding: 24px 16px 20px; gap: 18px; border-radius: 20px; }
-            .header h1 { font-size: 1.35rem; }
-            .upload-zone { padding: 28px 14px; }
-            .result-textarea { min-height: 110px; font-size: 0.82rem; }
+
+        .time-options label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <div class="icon">📷</div>
-        <h1>Распознавание текста</h1>
-        <p>Загрузите, перетащите или вставьте (Ctrl+V) картинку</p>
-    </div>
-    <div class="upload-zone" id="uploadZone">
-        <span class="upload-icon">🖼️</span>
-        <span class="upload-text">Выберите или перетащите изображение</span>
-        <span class="upload-hint">PNG, JPG, WEBP, GIF · до 20 МБ · или Ctrl+V</span>
-        <input type="file" id="fileInput" accept="image/*">
-    </div>
-    <div class="preview-container" id="previewContainer">
-        <img id="previewImage" src="" alt="Предпросмотр">
-        <button class="remove-btn" id="removeImageBtn" title="Удалить изображение">✕</button>
-    </div>
-    <button class="recognize-btn" id="recognizeBtn" disabled>
-        <span class="spinner"></span>
-        <span class="btn-text">🔍 Распознать текст</span>
-    </button>
-    <div class="progress-container" id="progressContainer">
-        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <p class="progress-text" id="progressText">Подготовка...</p>
-    </div>
-    <div class="message" id="messageBox"></div>
-    <div class="result-container" id="resultContainer">
-        <div class="result-label">
-            <span>📝 Распознанный текст</span>
-            <button class="copy-btn" id="copyBtn">📋 <span id="copyBtnText">Копировать</span></button>
+<div class="game-container">
+    <div class="board-section">
+        <div id="checkersBoard"></div>
+        <div style="display: flex; gap: 10px;">
+            <button id="resetCheckers">Новая игра</button>
+            <button id="clearHistoryBtn">Очистить историю партий</button>
         </div>
-        <textarea class="result-textarea" id="resultTextarea" placeholder="Текст появится здесь..." readonly></textarea>
+    </div>
+    <div class="info-panel">
+        <div id="checkersStatus">Ход белых</div>
+        <div class="timer" id="timerDisplay">--:--</div>
+        <div class="move-history-title">История ходов</div>
+        <ol id="moveHistoryList"></ol>
+        <div class="game-history-title">История партий</div>
+        <div id="gameHistoryList"></div>
     </div>
 </div>
+
+<!-- Модальное окно выбора времени -->
+<div id="timeModal" class="modal">
+    <div class="modal-content">
+        <h3>Настройка времени на ход</h3>
+        <div class="time-options">
+            <label><input type="radio" name="timeControl" value="0" checked> Без ограничений</label>
+            <label><input type="radio" name="timeControl" value="60"> 1 минута</label>
+            <label><input type="radio" name="timeControl" value="120"> 2 минуты</label>
+            <label><input type="radio" name="timeControl" value="300"> 5 минут</label>
+        </div>
+        <button id="startGameBtn">Начать игру</button>
+    </div>
+</div>
+
 <script>
     (function() {
-        const uploadZone = document.getElementById('uploadZone');
-        const fileInput = document.getElementById('fileInput');
-        const previewContainer = document.getElementById('previewContainer');
-        const previewImage = document.getElementById('previewImage');
-        const removeImageBtn = document.getElementById('removeImageBtn');
-        const recognizeBtn = document.getElementById('recognizeBtn');
-        const progressContainer = document.getElementById('progressContainer');
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
-        const messageBox = document.getElementById('messageBox');
-        const resultContainer = document.getElementById('resultContainer');
-        const resultTextarea = document.getElementById('resultTextarea');
-        const copyBtn = document.getElementById('copyBtn');
-        const copyBtnText = document.getElementById('copyBtnText');
+        // ---------- Глобальные переменные игры ----------
+        let checkersBoard = [],
+            selectedCell = null,
+            currentTurn = 'white',
+            forcedCapture = false;
+        let highlightMoves = [];
 
-        let selectedFile = null;
-        let currentWorker = null;
+        // ---------- Таймер ----------
+        let timerInterval = null;
+        let timeLeft = 0;               // секунд для текущего игрока
+        let timeControl = 0;           // 0 = без ограничений, иначе секунды на ход
+        let timerActive = false;
 
-        function resetAll() {
-            if (currentWorker) {
-                try { currentWorker.terminate(); } catch(e) {}
-                currentWorker = null;
-            }
-            selectedFile = null;
-            fileInput.value = '';
-            previewImage.src = '';
-            previewContainer.classList.remove('visible');
-            uploadZone.classList.remove('has-image');
-            recognizeBtn.disabled = true;
-            recognizeBtn.classList.remove('loading');
-            progressContainer.classList.remove('visible');
-            progressFill.style.width = '0%';
-            progressText.textContent = 'Подготовка...';
-            messageBox.className = 'message';
-            messageBox.textContent = '';
-            resultContainer.classList.remove('visible');
-            resultTextarea.value = '';
-            copyBtn.classList.remove('copied');
-            copyBtnText.textContent = 'Копировать';
+        // ---------- История ходов текущей партии ----------
+        let moveHistory = [];           // массив строк вида "a3-b4" или "c5:e3"
+        let currentMoveSequence = [];   // накопитель клеток для серии взятий
+
+        // ---------- История партий (localStorage) ----------
+        const STORAGE_KEY = 'checkersGameHistory';
+
+        // ---------- Вспомогательные функции координат ----------
+        function colToLetter(col) {
+            return String.fromCharCode(97 + col); // 0->a, 7->h
         }
 
-        function showMessage(text, type = 'error') {
-            messageBox.className = 'message ' + type;
-            messageBox.textContent = text;
-            if (type === 'info') {
-                setTimeout(() => {
-                    if (messageBox.textContent === text) {
-                        messageBox.className = 'message';
-                        messageBox.textContent = '';
+        function rowToNumber(row) {
+            return 8 - row;   // row 7 -> 1, row 0 -> 8
+        }
+
+        function cellName(row, col) {
+            return colToLetter(col) + rowToNumber(row);
+        }
+
+        // ---------- Управление историей партий (localStorage) ----------
+        function loadGameHistory() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveGameHistory(history) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+            } catch (e) {
+                // localStorage переполнен или недоступен
+            }
+        }
+
+        function addGameToHistory(winner, moves, timeControlUsed) {
+            const history = loadGameHistory();
+            history.push({
+                date: new Date().toLocaleString(),
+                winner: winner === 'white' ? 'Белые' : 'Чёрные',
+                moves: moves.slice(),
+                timeControl: timeControlUsed
+            });
+            saveGameHistory(history);
+            renderGameHistory();
+        }
+
+        function clearGameHistory() {
+            try {
+                localStorage.removeItem(STORAGE_KEY);
+            } catch (e) {}
+            renderGameHistory();
+        }
+
+        function renderGameHistory() {
+            const container = document.getElementById('gameHistoryList');
+            const history = loadGameHistory();
+            container.innerHTML = '';
+            if (history.length === 0) {
+                container.innerHTML = '<div style="padding:5px;">Нет сохранённых партий</div>';
+                return;
+            }
+            history.slice().reverse().forEach((game, idx) => {
+                const div = document.createElement('div');
+                div.className = 'game-entry';
+                div.textContent = `${game.date} — Победитель: ${game.winner} (время: ${game.timeControl === 0 ? 'без ограничений' : game.timeControl + ' сек'})`;
+                div.title = 'Ходы: ' + game.moves.join(', ');
+                container.appendChild(div);
+            });
+        }
+
+        // ---------- Управление историей ходов текущей партии ----------
+        function resetMoveHistory() {
+            moveHistory = [];
+            currentMoveSequence = [];
+            document.getElementById('moveHistoryList').innerHTML = '';
+        }
+
+        function addMoveToHistory(moveStr) {
+            moveHistory.push(moveStr);
+            const list = document.getElementById('moveHistoryList');
+            const li = document.createElement('li');
+            li.textContent = moveStr;
+            list.appendChild(li);
+            list.scrollTop = list.scrollHeight;
+        }
+
+        // Завершение серии ходов (после того, как игрок закончил все обязательные взятия)
+        function finalizeCurrentMove() {
+            if (currentMoveSequence.length >= 2) {
+                // Собираем строку: начальная клетка, затем разделители '-' для тихого хода, ':' для взятия
+                // Но у нас в последовательности все ходы либо все тихие, либо все взятия (смешанных не бывает)
+                const isCapture = (currentMoveSequence.length > 2) || 
+                                  (moveHistory.length > 0 && moveHistory[moveHistory.length-1].includes(':'));
+                // Определим по контексту: если последовательность из двух клеток и между ними было взятие? 
+                // Проще: если в highlightMoves первого хода был capture?
+                // Мы можем сохранять тип хода в момент executeMove. Но чтобы не усложнять, используем факт:
+                // Если длина >2, значит было хотя бы одно взятие (серия). В одиночном ходе тоже может быть взятие.
+                // Будем использовать флаг isCapture из executeMove, переданный через замыкание. Переделаем.
+                const separator = isCapture ? ':' : '-';
+                const moveStr = currentMoveSequence.join(separator);
+                addMoveToHistory(moveStr);
+            } else if (currentMoveSequence.length === 2) {
+                addMoveToHistory(currentMoveSequence.join('-'));
+            }
+            currentMoveSequence = [];
+        }
+
+        // ---------- Таймер ----------
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            timerActive = false;
+        }
+
+        function updateTimerDisplay() {
+            const el = document.getElementById('timerDisplay');
+            if (timeControl === 0) {
+                el.textContent = '--:--';
+                return;
+            }
+            const mins = Math.floor(Math.max(0, timeLeft) / 60);
+            const secs = Math.floor(Math.max(0, timeLeft) % 60);
+            el.textContent = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+            if (timeLeft <= 0) {
+                el.style.color = '#ff5555';
+            } else {
+                el.style.color = '#f0d9b5';
+            }
+        }
+
+        function startTimer() {
+            if (timeControl === 0) {
+                updateTimerDisplay();
+                return;
+            }
+            stopTimer();
+            timerActive = true;
+            timeLeft = timeControl; // сброс на полное время для текущего игрока
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerDisplay();
+                }
+                if (timeLeft <= 0) {
+                    // Время вышло
+                    stopTimer();
+                    timerActive = false;
+                    document.getElementById('checkersStatus').textContent =
+                        `Время вышло! Ход ${currentTurn === 'white' ? 'белых' : 'чёрных'}. Сделайте ход.`;
+                    alert(`Время на ход истекло! Сейчас ход ${currentTurn === 'white' ? 'белых' : 'чёрных'}.`);
+                    updateTimerDisplay();
+                }
+            }, 1000);
+        }
+
+        function resetTimerForNewTurn() {
+            stopTimer();
+            if (timeControl > 0) {
+                timeLeft = timeControl;
+                updateTimerDisplay();
+                startTimer();
+            } else {
+                updateTimerDisplay();
+            }
+        }
+
+        // ---------- Оригинальные функции игры (без изменений в логике) ----------
+        function removeCapturedPiece(fromRow, fromCol, toRow, toCol) {
+            const dr = Math.sign(toRow - fromRow);
+            const dc = Math.sign(toCol - fromCol);
+            let r = fromRow + dr;
+            let c = fromCol + dc;
+            const opponent = currentTurn === 'white' ? 'black' : 'white';
+            while (r !== toRow || c !== toCol) {
+                if (checkersBoard[r][c] && checkersBoard[r][c].startsWith(opponent)) {
+                    checkersBoard[r][c] = null;
+                    return;
+                }
+                r += dr;
+                c += dc;
+            }
+        }
+
+        function setupBoard() {
+            checkersBoard = [];
+            for (let r = 0; r < 8; r++) {
+                checkersBoard[r] = [];
+                for (let c = 0; c < 8; c++) {
+                    if ((r + c) % 2 === 1) {
+                        if (r < 3) checkersBoard[r][c] = 'black';
+                        else if (r > 4) checkersBoard[r][c] = 'white';
+                        else checkersBoard[r][c] = null;
+                    } else checkersBoard[r][c] = null;
+                }
+            }
+            currentTurn = 'white';
+            selectedCell = null;
+            forcedCapture = false;
+            highlightMoves = [];
+            checkForcedCapture();
+            drawBoard();
+            document.getElementById('checkersStatus').textContent = 'Ход белых';
+            resetMoveHistory();
+            stopTimer();
+            timerActive = false;
+            resetTimerForNewTurn(); // запустит таймер для белых
+        }
+
+        function drawBoard() {
+            const container = document.getElementById('checkersBoard');
+            container.innerHTML = '';
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const sq = document.createElement('div');
+                    sq.className = `square ${(r + c) % 2 === 0 ? 'light-sq' : 'dark-sq'}`;
+                    sq.dataset.row = r;
+                    sq.dataset.col = c;
+                    if (selectedCell && r === selectedCell.row && c === selectedCell.col) {
+                        sq.classList.add('selected-cell');
                     }
-                }, 6000);
+                    if (highlightMoves.some(m => m.row === r && m.col === c)) {
+                        sq.classList.add('highlight-move');
+                    }
+                    const piece = checkersBoard[r][c];
+                    if (piece) {
+                        const pieceEl = document.createElement('div');
+                        const isKing = piece.endsWith('_king');
+                        const pieceColor = piece.startsWith('white') ? 'white' : 'black';
+                        pieceEl.className = `piece ${pieceColor}-piece`;
+                        if (isKing) pieceEl.classList.add('king');
+                        sq.appendChild(pieceEl);
+                    }
+                    sq.addEventListener('click', () => onSquareClick(r, c));
+                    container.appendChild(sq);
+                }
             }
         }
 
-        function hideMessage() {
-            messageBox.className = 'message';
-            messageBox.textContent = '';
+        function checkForcedCapture() {
+            forcedCapture = false;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (checkersBoard[r][c] && checkersBoard[r][c].startsWith(currentTurn)) {
+                        if (canCaptureFrom(r, c)) {
+                            forcedCapture = true;
+                            return;
+                        }
+                    }
+                }
+            }
         }
 
-        function handleFile(file) {
-            hideMessage();
-            if (!file) return;
-            const validTypes = ['image/png','image/jpeg','image/jpg','image/webp','image/gif','image/bmp','image/tiff'];
-            if (!validTypes.includes(file.type)) {
-                showMessage('⚠️ Пожалуйста, выберите изображение (PNG, JPG, WEBP и др.)', 'error');
+        function canCaptureFrom(row, col) {
+            const piece = checkersBoard[row][col];
+            if (!piece) return false;
+            const moves = getValidMoves(row, col);
+            return moves.some(m => m.capture);
+        }
+
+        function onSquareClick(row, col) {
+            // Если уже выбрана фигура для продолжения взятия
+            if (selectedCell) {
+                if (selectedCell.row === row && selectedCell.col === col) {
+                    if (!forcedCapture) {
+                        selectedCell = null;
+                        highlightMoves = [];
+                        drawBoard();
+                    }
+                    return;
+                }
+                if (highlightMoves.some(m => m.row === row && m.col === col)) {
+                    const targetMove = highlightMoves.find(m => m.row === row && m.col === col);
+                    if (targetMove) {
+                        executeMove(row, col, targetMove.capture);
+                    }
+                    return;
+                }
                 return;
             }
-            if (file.size > 20 * 1024 * 1024) {
-                showMessage('⚠️ Размер файла не должен превышать 20 МБ', 'error');
-                return;
-            }
-            if (currentWorker) {
-                try { currentWorker.terminate(); } catch(e) {}
-                currentWorker = null;
-            }
-            recognizeBtn.classList.remove('loading');
-            progressContainer.classList.remove('visible');
-            resultContainer.classList.remove('visible');
-            resultTextarea.value = '';
 
-            selectedFile = file;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                previewImage.src = e.target.result;
-                previewContainer.classList.add('visible');
-                uploadZone.classList.add('has-image');
-                recognizeBtn.disabled = false;
-            };
-            reader.onerror = () => {
-                showMessage('⚠️ Не удалось прочитать файл', 'error');
-                resetAll();
-            };
-            reader.readAsDataURL(file);
+            // Выбор своей фигуры
+            if (checkersBoard[row][col] && checkersBoard[row][col].startsWith(currentTurn)) {
+                if (forcedCapture && !canCaptureFrom(row, col)) {
+                    return;
+                }
+                const moves = getValidMoves(row, col);
+                if (moves.length > 0) {
+                    selectedCell = { row, col };
+                    highlightMoves = forcedCapture ?
+                        moves.filter(m => m.capture).map(m => ({ row: m.toRow, col: m.toCol, capture: true })) :
+                        moves.map(m => ({ row: m.toRow, col: m.toCol, capture: m.capture }));
+                } else {
+                    selectedCell = null;
+                    highlightMoves = [];
+                }
+                drawBoard();
+            }
         }
 
-        // --- Обработчики ---
-        uploadZone.addEventListener('click', (e) => {
-            if (e.target === removeImageBtn || removeImageBtn.contains(e.target)) return;
-            fileInput.click();
-        });
+        function executeMove(toRow, toCol, isCapture) {
+            const piece = checkersBoard[selectedCell.row][selectedCell.col];
+            checkersBoard[toRow][toCol] = piece;
+            checkersBoard[selectedCell.row][selectedCell.col] = null;
+            if (piece === 'white' && toRow === 0) checkersBoard[toRow][toCol] = 'white_king';
+            else if (piece === 'black' && toRow === 7) checkersBoard[toRow][toCol] = 'black_king';
+            if (isCapture) {
+                removeCapturedPiece(selectedCell.row, selectedCell.col, toRow, toCol);
+            }
 
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
-        });
+            // Начинаем формировать запись хода
+            const fromCell = cellName(selectedCell.row, selectedCell.col);
+            const toCell = cellName(toRow, toCol);
 
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.classList.add('drag-over');
-        });
-        uploadZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('drag-over');
-        });
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('drag-over');
-            if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-        });
+            // Если это первый шаг в серии, инициализируем currentMoveSequence
+            if (currentMoveSequence.length === 0) {
+                currentMoveSequence.push(fromCell);
+            }
+            currentMoveSequence.push(toCell);
 
-        removeImageBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            resetAll();
-            showMessage('Изображение удалено. Выберите новое или вставьте Ctrl+V', 'info');
-        });
+            selectedCell = null;
+            highlightMoves = [];
+            drawBoard();
 
-        // Вставка из буфера обмена (Ctrl+V)
-        document.addEventListener('paste', (e) => {
-            const items = e.clipboardData?.items;
-            if (!items) return;
-            let imageFile = null;
-            // Ищем файлы или изображения в буфере
-            if (e.clipboardData.files && e.clipboardData.files.length > 0) {
-                // В буфере могут быть файлы (например, скопированные из файлового менеджера)
-                const file = e.clipboardData.files[0];
-                if (file.type.startsWith('image/')) {
-                    e.preventDefault(); // чтобы не вставлять как URL/base64 в другие поля
-                    handleFile(file);
+            // Продолжение взятия только если предыдущий ход был взятием
+            if (isCapture) {
+                const newMoves = getValidMoves(toRow, toCol).filter(m => m.capture);
+                if (newMoves.length > 0) {
+                    selectedCell = { row: toRow, col: toCol };
+                    highlightMoves = newMoves.map(m => ({ row: m.toRow, col: m.toCol, capture: true }));
+                    drawBoard();
+                    document.getElementById('checkersStatus').textContent =
+                        `${currentTurn === 'white' ? 'Белые' : 'Чёрные'} бьют дальше`;
+                    // Таймер не переключаем, ждём завершения серии
                     return;
                 }
             }
-            // Ищем изображения среди элементов
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    e.preventDefault();
-                    const blob = items[i].getAsFile();
-                    if (blob) {
-                        // Создаём файл с именем (можно дать любое)
-                        const file = new File([blob], 'pasted-image.png', { type: blob.type });
-                        handleFile(file);
-                        return;
-                    }
-                }
+
+            // Завершение хода (серия закончена или одиночный ход)
+            // Определим, был ли этот ход взятием, для правильного разделителя в истории
+            // Мы уже имеем isCapture, но он относится к последнему шагу. Если серия, то все шаги взятия.
+            // Передадим в finalizeCurrentMove флаг, что это capture-ход.
+            // Проще: если currentMoveSequence.length > 2 или isCapture === true, используем ':'
+            const moveWasCapture = isCapture || currentMoveSequence.length > 2;
+            const separator = moveWasCapture ? ':' : '-';
+            const moveStr = currentMoveSequence.join(separator);
+            addMoveToHistory(moveStr);
+            currentMoveSequence = [];
+
+            // Смена игрока
+            currentTurn = currentTurn === 'white' ? 'black' : 'white';
+            checkForcedCapture();
+            document.getElementById('checkersStatus').textContent =
+                `Ход ${currentTurn === 'white' ? 'белых' : 'чёрных'}` +
+                (forcedCapture ? ' (должны взять!)' : '');
+
+            // Таймер для нового игрока
+            resetTimerForNewTurn();
+
+            drawBoard();
+            if (!hasAnyMoves(currentTurn)) {
+                const winner = currentTurn === 'white' ? 'black' : 'white';
+                document.getElementById('checkersStatus').textContent =
+                    `Победа ${winner === 'white' ? 'белых' : 'чёрных'}!`;
+                stopTimer();
+                timerActive = false;
+                updateTimerDisplay();
+                addGameToHistory(winner, moveHistory, timeControl);
             }
-        });
+        }
 
-        // Распознавание (исправлен вызов Tesseract v5)
-        recognizeBtn.addEventListener('click', async () => {
-            if (!selectedFile || recognizeBtn.disabled || recognizeBtn.classList.contains('loading')) return;
-
-            hideMessage();
-            resultContainer.classList.remove('visible');
-            resultTextarea.value = '';
-            copyBtn.classList.remove('copied');
-            copyBtnText.textContent = 'Копировать';
-
-            recognizeBtn.classList.add('loading');
-            recognizeBtn.disabled = true;
-            progressContainer.classList.add('visible');
-            progressFill.style.width = '0%';
-            progressText.textContent = 'Инициализация Tesseract...';
-
-            try {
-                // Создаём worker сразу с языками и логгером
-                const worker = await Tesseract.createWorker('rus+eng', 1, {
-                    logger: (m) => {
-                        if (m.status === 'recognizing text') {
-                            const percent = Math.round((m.progress || 0) * 100);
-                            progressFill.style.width = percent + '%';
-                            progressText.textContent = `Распознавание: ${percent}%`;
-                        } else if (m.status === 'loading tesseract core') {
-                            progressText.textContent = 'Загрузка ядра Tesseract...';
-                            progressFill.style.width = '10%';
-                        } else if (m.status === 'initializing tesseract') {
-                            progressText.textContent = 'Инициализация движка...';
-                            progressFill.style.width = '20%';
-                        } else if (m.status === 'loading language traineddata') {
-                            progressText.textContent = 'Загрузка языковых данных (rus+eng)...';
-                            progressFill.style.width = '35%';
-                        } else if (m.status === 'initializing api') {
-                            progressText.textContent = 'Подготовка API...';
-                            progressFill.style.width = '55%';
+        function getValidMoves(row, col) {
+            const piece = checkersBoard[row][col];
+            if (!piece) return [];
+            const isKing = piece.endsWith('_king');
+            const isWhite = piece.startsWith('white');
+            const opponent = isWhite ? 'black' : 'white';
+            const moves = [];
+            const captureMoves = [];
+            const directions = [-1, 1];
+            const range = isKing ? 7 : 1;
+            for (let dr of directions) {
+                for (let dc of directions) {
+                    for (let step = 1; step <= range; step++) {
+                        const nr = row + dr * step;
+                        const nc = col + dc * step;
+                        if (nr < 0 || nr > 7 || nc < 0 || nc > 7) break;
+                        const target = checkersBoard[nr]?.[nc];
+                        if (target === null) {
+                            if (!isKing && ((isWhite && dr !== -1) || (!isWhite && dr !== 1))) continue;
+                            moves.push({ toRow: nr, toCol: nc, capture: false });
+                        } else if (target.startsWith(opponent)) {
+                            const jr = nr + dr;
+                            const jc = nc + dc;
+                            if (jr >= 0 && jr <= 7 && jc >= 0 && jc <= 7 && checkersBoard[jr][jc] === null) {
+                                captureMoves.push({ toRow: jr, toCol: jc, capture: true });
+                            }
+                            break;
+                        } else {
+                            break;
                         }
                     }
-                });
-                currentWorker = worker;
-                progressText.textContent = 'Распознавание...';
-                progressFill.style.width = '60%';
-
-                const { data: { text } } = await worker.recognize(selectedFile);
-                await worker.terminate();
-                currentWorker = null;
-
-                progressFill.style.width = '100%';
-                progressText.textContent = 'Готово';
-                const trimmed = text.trim();
-                resultTextarea.value = trimmed || '(текст не найден)';
-                resultContainer.classList.add('visible');
-                recognizeBtn.classList.remove('loading');
-                recognizeBtn.disabled = false;
-                progressContainer.classList.remove('visible');
-
-                if (!trimmed) {
-                    showMessage('ℹ️ Текст не обнаружен. Попробуйте более чёткое изображение.', 'info');
-                } else {
-                    hideMessage();
-                }
-            } catch (err) {
-                console.error('OCR error:', err);
-                if (currentWorker) {
-                    try { await currentWorker.terminate(); } catch(e) {}
-                    currentWorker = null;
-                }
-                recognizeBtn.classList.remove('loading');
-                recognizeBtn.disabled = false;
-                progressContainer.classList.remove('visible');
-                showMessage('❌ Ошибка распознавания: ' + (err.message || 'неизвестная ошибка'), 'error');
-            }
-        });
-
-        // Копирование текста
-        copyBtn.addEventListener('click', async () => {
-            const text = resultTextarea.value;
-            if (!text || text === '(текст не найден)') {
-                showMessage('Нечего копировать', 'info');
-                return;
-            }
-            try {
-                await navigator.clipboard.writeText(text);
-                copyBtn.classList.add('copied');
-                copyBtnText.textContent = 'Скопировано ✓';
-                setTimeout(() => {
-                    copyBtn.classList.remove('copied');
-                    copyBtnText.textContent = 'Копировать';
-                }, 2000);
-                hideMessage();
-            } catch (err) {
-                resultTextarea.select();
-                resultTextarea.setSelectionRange(0, 99999);
-                try {
-                    document.execCommand('copy');
-                    copyBtn.classList.add('copied');
-                    copyBtnText.textContent = 'Скопировано ✓';
-                    setTimeout(() => {
-                        copyBtn.classList.remove('copied');
-                        copyBtnText.textContent = 'Копировать';
-                    }, 2000);
-                    hideMessage();
-                } catch (e) {
-                    showMessage('Не удалось скопировать. Выделите текст вручную.', 'error');
                 }
             }
-        });
+            return captureMoves.length > 0 ? captureMoves : moves;
+        }
 
-        // Изначально кнопка неактивна
-        recognizeBtn.disabled = true;
+        function hasAnyMoves(player) {
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (checkersBoard[r][c] && checkersBoard[r][c].startsWith(player)) {
+                        if (getValidMoves(r, c).length > 0) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function resetCheckers() {
+            // Показываем диалог выбора времени, после подтверждения запускаем игру
+            showTimeModal((selectedTime) => {
+                timeControl = selectedTime;
+                setupBoard();
+                checkForcedCapture();
+                drawBoard();
+                document.getElementById('checkersStatus').textContent = 'Ход белых';
+                resetTimerForNewTurn();
+            });
+        }
+
+        // ---------- Модальное окно выбора времени ----------
+        function showTimeModal(callback) {
+            const modal = document.getElementById('timeModal');
+            modal.style.display = 'flex';
+            const startBtn = document.getElementById('startGameBtn');
+            const radioName = 'timeControl';
+            
+            function onStart() {
+                const selected = document.querySelector(`input[name="${radioName}"]:checked`);
+                const value = selected ? parseInt(selected.value, 10) : 0;
+                modal.style.display = 'none';
+                startBtn.removeEventListener('click', onStart);
+                callback(value);
+            }
+
+            startBtn.addEventListener('click', onStart);
+        }
+
+        // ---------- Инициализация кнопок и событий ----------
+        function initCheckers() {
+            document.getElementById('resetCheckers').addEventListener('click', resetCheckers);
+            document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+                if (confirm('Удалить всю историю партий?')) {
+                    clearGameHistory();
+                }
+            });
+
+            // При первой загрузке предлагаем выбрать время и запустить игру
+            showTimeModal((selectedTime) => {
+                timeControl = selectedTime;
+                setupBoard();
+                resetTimerForNewTurn();
+            });
+
+            renderGameHistory();
+        }
+
+        // Старт
+        window.addEventListener('DOMContentLoaded', initCheckers);
     })();
 </script>
 </body>
