@@ -3,762 +3,769 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Шашки — расширенная версия</title>
+    <title>Общий чат | Все видят все сообщения</title>
     <style>
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #2d2d2d;
-            color: #f0d9b5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
-            flex-direction: column;
-            padding: 20px;
-        }
-
-        .game-container {
-            background: #1e1e1e;
-            padding: 20px 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 30px;
-            align-items: flex-start;
-            justify-content: center;
-        }
-
-        .board-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        #checkersBoard {
-            display: grid;
-            grid-template-columns: repeat(8, 80px);
-            grid-template-rows: repeat(8, 80px);
-            border: 4px solid #b58863;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 15px;
-        }
-
-        .square {
-            width: 80px;
-            height: 80px;
             display: flex;
             justify-content: center;
             align-items: center;
-            position: relative;
-        }
-
-        .dark-sq {
-            background-color: #b58863;
-        }
-
-        .light-sq {
-            background-color: #f0d9b5;
-        }
-
-        .selected-cell {
-            box-shadow: inset 0 0 0 4px #ffeb3b;
-            z-index: 2;
-        }
-
-        .highlight-move {
-            box-shadow: inset 0 0 0 4px #4caf50;
-            cursor: pointer;
-        }
-
-        .piece {
-            width: 70%;
-            height: 70%;
-            border-radius: 50%;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-            transition: transform 0.1s;
-        }
-
-        .white-piece {
-            background: radial-gradient(circle at 40% 40%, #ffffff, #cccccc);
-        }
-
-        .black-piece {
-            background: radial-gradient(circle at 40% 40%, #555555, #111111);
-        }
-
-        .king {
-            position: relative;
-        }
-
-        .king::after {
-            content: "♛";
-            font-size: 32px;
-            color: gold;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-shadow: 0 0 6px black;
-        }
-
-        .info-panel {
-            background: #2a2a2a;
             padding: 20px;
-            border-radius: 12px;
-            width: 300px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            margin: 0;
         }
 
-        #checkersStatus {
-            font-weight: bold;
-            font-size: 1.1em;
-            background: #3d3d3d;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .timer {
-            font-size: 1.4em;
-            background: #3d3d3d;
-            padding: 8px;
-            border-radius: 8px;
-            text-align: center;
-            font-family: monospace;
-        }
-
-        .move-history-title, .game-history-title {
-            font-weight: bold;
-            margin-top: 5px;
-        }
-
-        #moveHistoryList {
-            background: #3d3d3d;
-            border-radius: 8px;
-            padding: 8px;
-            max-height: 150px;
-            overflow-y: auto;
-            font-family: monospace;
-            font-size: 0.9em;
-            list-style: none;
-        }
-
-        #moveHistoryList li {
-            padding: 2px 0;
-            border-bottom: 1px solid #555;
-        }
-
-        #gameHistoryList {
-            background: #3d3d3d;
-            border-radius: 8px;
-            padding: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            font-size: 0.85em;
-            margin-bottom: 10px;
-        }
-
-        .game-entry {
-            padding: 5px;
-            border-bottom: 1px solid #555;
-            cursor: pointer;
-        }
-
-        .game-entry:hover {
-            background: #4a4a4a;
-        }
-
-        button {
-            background: #b58863;
-            color: #1e1e1e;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-            font-size: 0.95em;
-        }
-
-        button:hover {
-            background: #c69c6d;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
+        .chat-container {
             width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-
-        .modal-content {
-            background: #2d2d2d;
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 0 30px black;
-        }
-
-        .modal-content h3 {
-            margin-bottom: 20px;
-        }
-
-        .time-options {
-            margin: 15px 0;
+            max-width: 700px;
+            height: 90vh;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4), 0 0 40px rgba(100, 150, 255, 0.15);
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            align-items: flex-start;
+            overflow: hidden;
         }
 
-        .time-options label {
+        .chat-header {
+            padding: 20px 24px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .chat-header h1 {
+            color: #e0e0ff;
+            font-size: 1.6rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-header h1::before {
+            content: "💬";
+            font-size: 1.8rem;
+            filter: drop-shadow(0 0 8px rgba(100, 180, 255, 0.6));
+        }
+
+        .user-badge {
             display: flex;
             align-items: center;
             gap: 8px;
+            background: rgba(100, 150, 255, 0.2);
+            border-radius: 30px;
+            padding: 6px 16px;
+            border: 1px solid rgba(100, 150, 255, 0.3);
+        }
+
+        .user-badge .online-dot {
+            width: 10px;
+            height: 10px;
+            background: #4ade80;
+            border-radius: 50%;
+            box-shadow: 0 0 12px #4ade80;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%,
+            100% {
+                box-shadow: 0 0 8px #4ade80;
+            }
+            50% {
+                box-shadow: 0 0 20px #4ade80, 0 0 30px #4ade80;
+            }
+        }
+
+        .user-badge span {
+            color: #c0d0ff;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .status-text {
+            color: #a0b0cc;
+            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+            letter-spacing: 0.3px;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            scroll-behavior: smooth;
+        }
+
+        .messages-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        .messages-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .messages-area::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 80%;
+            animation: fadeInUp 0.3s ease-out;
+            word-break: break-word;
+        }
+
+        .message.own {
+            align-self: flex-end;
+        }
+        .message.other {
+            align-self: flex-start;
+        }
+        .message.system {
+            align-self: center;
+            max-width: 90%;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message .bubble {
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            color: #f0f0ff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .message.own .bubble {
+            background: linear-gradient(135deg, #4f6ef6, #3b5de7);
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 20px rgba(79, 110, 246, 0.3);
+        }
+
+        .message.other .bubble {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.system .bubble {
+            background: rgba(255, 200, 100, 0.15);
+            border: 1px solid rgba(255, 200, 100, 0.3);
+            text-align: center;
+            font-style: italic;
+            color: #ffd78b;
+            font-size: 0.85rem;
+            border-radius: 20px;
+            padding: 8px 18px;
+        }
+
+        .message .meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            padding: 0 8px;
+            font-size: 0.75rem;
+            color: #a0b0cc;
+        }
+
+        .message.own .meta {
+            justify-content: flex-end;
+        }
+        .message.other .meta {
+            justify-content: flex-start;
+        }
+
+        .message .sender-name {
+            font-weight: 600;
+            color: #c8d6ff;
+        }
+        .message.own .sender-name {
+            color: #b8c8ff;
+        }
+
+        .message .time {
+            opacity: 0.7;
+            font-size: 0.7rem;
+        }
+
+        .input-area {
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, 0.03);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .name-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .name-row input {
+            flex: 1;
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            color: #e0e0ff;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .name-row input:focus {
+            border-color: #4f6ef6;
+            box-shadow: 0 0 0 3px rgba(79, 110, 246, 0.15);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .name-row input::placeholder {
+            color: #8899bb;
+        }
+
+        .save-name-btn {
+            padding: 10px 18px;
+            background: rgba(100, 150, 255, 0.25);
+            border: 1px solid rgba(100, 150, 255, 0.4);
+            border-radius: 25px;
+            color: #c0d0ff;
             cursor: pointer;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .save-name-btn:hover {
+            background: rgba(100, 150, 255, 0.4);
+            box-shadow: 0 0 15px rgba(79, 110, 246, 0.3);
+        }
+
+        .message-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .message-row input {
+            flex: 1;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            color: #f0f0ff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .message-row input:focus {
+            border-color: #4f6ef6;
+            box-shadow: 0 0 0 3px rgba(79, 110, 246, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .message-row input::placeholder {
+            color: #8899bb;
+        }
+
+        .send-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4f6ef6, #3b5de7);
+            border: none;
+            color: white;
+            font-size: 1.3rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(79, 110, 246, 0.4);
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(79, 110, 246, 0.6);
+        }
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+        .send-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .empty-chat {
+            text-align: center;
+            color: #8899bb;
+            padding: 40px 20px;
+            font-style: italic;
+            opacity: 0.7;
+        }
+
+        .empty-chat .icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            display: block;
+            filter: grayscale(0.3);
+        }
+
+        @media (max-width: 500px) {
+            .chat-container {
+                height: 95vh;
+                border-radius: 16px;
+            }
+            .chat-header h1 {
+                font-size: 1.2rem;
+            }
+            .message {
+                max-width: 90%;
+            }
+            .name-row {
+                flex-direction: column;
+                gap: 6px;
+            }
+            .save-name-btn {
+                width: 100%;
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body>
-<div class="game-container">
-    <div class="board-section">
-        <div id="checkersBoard"></div>
-        <div style="display: flex; gap: 10px;">
-            <button id="resetCheckers">Новая игра</button>
-            <button id="clearHistoryBtn">Очистить историю партий</button>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>Общий чат</h1>
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <div class="user-badge">
+                    <div class="online-dot"></div>
+                    <span id="currentUserNameDisplay">Гость</span>
+                </div>
+                <div class="status-text" id="connectionStatus">🌐 вкладки синхронизированы</div>
+            </div>
+        </div>
+
+        <div class="messages-area" id="messagesArea">
+            <div class="empty-chat">
+                <span class="icon">✨</span>
+                Сообщений пока нет.<br>Напишите что-нибудь, и это увидят все открытые вкладки сайта!
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="name-row">
+                <input type="text" id="nameInput" placeholder="Введите ваше имя..." maxlength="25" autocomplete="off">
+                <button class="save-name-btn" id="saveNameBtn">💾 Сохранить имя</button>
+            </div>
+            <div class="message-row">
+                <input type="text" id="messageInput" placeholder="Введите сообщение..." maxlength="500" autocomplete="off">
+                <button class="send-btn" id="sendBtn" title="Отправить">➤</button>
+            </div>
         </div>
     </div>
-    <div class="info-panel">
-        <div id="checkersStatus">Ход белых</div>
-        <div class="timer" id="timerDisplay">--:--</div>
-        <div class="move-history-title">История ходов</div>
-        <ol id="moveHistoryList"></ol>
-        <div class="game-history-title">История партий</div>
-        <div id="gameHistoryList"></div>
-    </div>
-</div>
 
-<!-- Модальное окно выбора времени -->
-<div id="timeModal" class="modal">
-    <div class="modal-content">
-        <h3>Настройка времени на ход</h3>
-        <div class="time-options">
-            <label><input type="radio" name="timeControl" value="0" checked> Без ограничений</label>
-            <label><input type="radio" name="timeControl" value="60"> 1 минута</label>
-            <label><input type="radio" name="timeControl" value="120"> 2 минуты</label>
-            <label><input type="radio" name="timeControl" value="300"> 5 минут</label>
-        </div>
-        <button id="startGameBtn">Начать игру</button>
-    </div>
-</div>
+    <script>
+        (function() {
+            // ---------- DOM элементы ----------
+            const messagesArea = document.getElementById('messagesArea');
+            const nameInput = document.getElementById('nameInput');
+            const messageInput = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const saveNameBtn = document.getElementById('saveNameBtn');
+            const currentUserNameDisplay = document.getElementById('currentUserNameDisplay');
+            const connectionStatus = document.getElementById('connectionStatus');
 
-<script>
-    (function() {
-        // ---------- Глобальные переменные игры ----------
-        let checkersBoard = [],
-            selectedCell = null,
-            currentTurn = 'white',
-            forcedCapture = false;
-        let highlightMoves = [];
+            // ---------- Константы ----------
+            const STORAGE_KEY_NAME = 'globalChatUserName';
+            const STORAGE_KEY_MESSAGES = 'globalChatMessages';
+            const CHANNEL_NAME = 'global-chat-channel';
+            const MAX_STORED_MESSAGES = 150;
 
-        // ---------- Таймер ----------
-        let timerInterval = null;
-        let timeLeft = 0;               // секунд для текущего игрока
-        let timeControl = 0;           // 0 = без ограничений, иначе секунды на ход
-        let timerActive = false;
+            // ---------- Состояние ----------
+            let currentUserName = localStorage.getItem(STORAGE_KEY_NAME) || 'Гость';
+            let messages = [];
+            let channel = null;
+            let isSending = false; // флаг чтобы избежать дублирования при получении своего же сообщения через BroadcastChannel
 
-        // ---------- История ходов текущей партии ----------
-        let moveHistory = [];           // массив строк вида "a3-b4" или "c5:e3"
-        let currentMoveSequence = [];   // накопитель клеток для серии взятий
-
-        // ---------- История партий (localStorage) ----------
-        const STORAGE_KEY = 'checkersGameHistory';
-
-        // ---------- Вспомогательные функции координат ----------
-        function colToLetter(col) {
-            return String.fromCharCode(97 + col); // 0->a, 7->h
-        }
-
-        function rowToNumber(row) {
-            return 8 - row;   // row 7 -> 1, row 0 -> 8
-        }
-
-        function cellName(row, col) {
-            return colToLetter(col) + rowToNumber(row);
-        }
-
-        // ---------- Управление историей партий (localStorage) ----------
-        function loadGameHistory() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                return raw ? JSON.parse(raw) : [];
-            } catch (e) {
-                return [];
-            }
-        }
-
-        function saveGameHistory(history) {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-            } catch (e) {
-                // localStorage переполнен или недоступен
-            }
-        }
-
-        function addGameToHistory(winner, moves, timeControlUsed) {
-            const history = loadGameHistory();
-            history.push({
-                date: new Date().toLocaleString(),
-                winner: winner === 'white' ? 'Белые' : 'Чёрные',
-                moves: moves.slice(),
-                timeControl: timeControlUsed
-            });
-            saveGameHistory(history);
-            renderGameHistory();
-        }
-
-        function clearGameHistory() {
-            try {
-                localStorage.removeItem(STORAGE_KEY);
-            } catch (e) {}
-            renderGameHistory();
-        }
-
-        function renderGameHistory() {
-            const container = document.getElementById('gameHistoryList');
-            const history = loadGameHistory();
-            container.innerHTML = '';
-            if (history.length === 0) {
-                container.innerHTML = '<div style="padding:5px;">Нет сохранённых партий</div>';
-                return;
-            }
-            history.slice().reverse().forEach((game, idx) => {
-                const div = document.createElement('div');
-                div.className = 'game-entry';
-                div.textContent = `${game.date} — Победитель: ${game.winner} (время: ${game.timeControl === 0 ? 'без ограничений' : game.timeControl + ' сек'})`;
-                div.title = 'Ходы: ' + game.moves.join(', ');
-                container.appendChild(div);
-            });
-        }
-
-        // ---------- Управление историей ходов текущей партии ----------
-        function resetMoveHistory() {
-            moveHistory = [];
-            currentMoveSequence = [];
-            document.getElementById('moveHistoryList').innerHTML = '';
-        }
-
-        function addMoveToHistory(moveStr) {
-            moveHistory.push(moveStr);
-            const list = document.getElementById('moveHistoryList');
-            const li = document.createElement('li');
-            li.textContent = moveStr;
-            list.appendChild(li);
-            list.scrollTop = list.scrollHeight;
-        }
-
-        // Завершение серии ходов (после того, как игрок закончил все обязательные взятия)
-        function finalizeCurrentMove() {
-            if (currentMoveSequence.length >= 2) {
-                // Собираем строку: начальная клетка, затем разделители '-' для тихого хода, ':' для взятия
-                // Но у нас в последовательности все ходы либо все тихие, либо все взятия (смешанных не бывает)
-                const isCapture = (currentMoveSequence.length > 2) || 
-                                  (moveHistory.length > 0 && moveHistory[moveHistory.length-1].includes(':'));
-                // Определим по контексту: если последовательность из двух клеток и между ними было взятие? 
-                // Проще: если в highlightMoves первого хода был capture?
-                // Мы можем сохранять тип хода в момент executeMove. Но чтобы не усложнять, используем факт:
-                // Если длина >2, значит было хотя бы одно взятие (серия). В одиночном ходе тоже может быть взятие.
-                // Будем использовать флаг isCapture из executeMove, переданный через замыкание. Переделаем.
-                const separator = isCapture ? ':' : '-';
-                const moveStr = currentMoveSequence.join(separator);
-                addMoveToHistory(moveStr);
-            } else if (currentMoveSequence.length === 2) {
-                addMoveToHistory(currentMoveSequence.join('-'));
-            }
-            currentMoveSequence = [];
-        }
-
-        // ---------- Таймер ----------
-        function stopTimer() {
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-            timerActive = false;
-        }
-
-        function updateTimerDisplay() {
-            const el = document.getElementById('timerDisplay');
-            if (timeControl === 0) {
-                el.textContent = '--:--';
-                return;
-            }
-            const mins = Math.floor(Math.max(0, timeLeft) / 60);
-            const secs = Math.floor(Math.max(0, timeLeft) % 60);
-            el.textContent = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
-            if (timeLeft <= 0) {
-                el.style.color = '#ff5555';
-            } else {
-                el.style.color = '#f0d9b5';
-            }
-        }
-
-        function startTimer() {
-            if (timeControl === 0) {
-                updateTimerDisplay();
-                return;
-            }
-            stopTimer();
-            timerActive = true;
-            timeLeft = timeControl; // сброс на полное время для текущего игрока
-            updateTimerDisplay();
-            timerInterval = setInterval(() => {
-                if (timeLeft > 0) {
-                    timeLeft--;
-                    updateTimerDisplay();
-                }
-                if (timeLeft <= 0) {
-                    // Время вышло
-                    stopTimer();
-                    timerActive = false;
-                    document.getElementById('checkersStatus').textContent =
-                        `Время вышло! Ход ${currentTurn === 'white' ? 'белых' : 'чёрных'}. Сделайте ход.`;
-                    alert(`Время на ход истекло! Сейчас ход ${currentTurn === 'white' ? 'белых' : 'чёрных'}.`);
-                    updateTimerDisplay();
-                }
-            }, 1000);
-        }
-
-        function resetTimerForNewTurn() {
-            stopTimer();
-            if (timeControl > 0) {
-                timeLeft = timeControl;
-                updateTimerDisplay();
-                startTimer();
-            } else {
-                updateTimerDisplay();
-            }
-        }
-
-        // ---------- Оригинальные функции игры (без изменений в логике) ----------
-        function removeCapturedPiece(fromRow, fromCol, toRow, toCol) {
-            const dr = Math.sign(toRow - fromRow);
-            const dc = Math.sign(toCol - fromCol);
-            let r = fromRow + dr;
-            let c = fromCol + dc;
-            const opponent = currentTurn === 'white' ? 'black' : 'white';
-            while (r !== toRow || c !== toCol) {
-                if (checkersBoard[r][c] && checkersBoard[r][c].startsWith(opponent)) {
-                    checkersBoard[r][c] = null;
-                    return;
-                }
-                r += dr;
-                c += dc;
-            }
-        }
-
-        function setupBoard() {
-            checkersBoard = [];
-            for (let r = 0; r < 8; r++) {
-                checkersBoard[r] = [];
-                for (let c = 0; c < 8; c++) {
-                    if ((r + c) % 2 === 1) {
-                        if (r < 3) checkersBoard[r][c] = 'black';
-                        else if (r > 4) checkersBoard[r][c] = 'white';
-                        else checkersBoard[r][c] = null;
-                    } else checkersBoard[r][c] = null;
-                }
-            }
-            currentTurn = 'white';
-            selectedCell = null;
-            forcedCapture = false;
-            highlightMoves = [];
-            checkForcedCapture();
-            drawBoard();
-            document.getElementById('checkersStatus').textContent = 'Ход белых';
-            resetMoveHistory();
-            stopTimer();
-            timerActive = false;
-            resetTimerForNewTurn(); // запустит таймер для белых
-        }
-
-        function drawBoard() {
-            const container = document.getElementById('checkersBoard');
-            container.innerHTML = '';
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    const sq = document.createElement('div');
-                    sq.className = `square ${(r + c) % 2 === 0 ? 'light-sq' : 'dark-sq'}`;
-                    sq.dataset.row = r;
-                    sq.dataset.col = c;
-                    if (selectedCell && r === selectedCell.row && c === selectedCell.col) {
-                        sq.classList.add('selected-cell');
-                    }
-                    if (highlightMoves.some(m => m.row === r && m.col === c)) {
-                        sq.classList.add('highlight-move');
-                    }
-                    const piece = checkersBoard[r][c];
-                    if (piece) {
-                        const pieceEl = document.createElement('div');
-                        const isKing = piece.endsWith('_king');
-                        const pieceColor = piece.startsWith('white') ? 'white' : 'black';
-                        pieceEl.className = `piece ${pieceColor}-piece`;
-                        if (isKing) pieceEl.classList.add('king');
-                        sq.appendChild(pieceEl);
-                    }
-                    sq.addEventListener('click', () => onSquareClick(r, c));
-                    container.appendChild(sq);
-                }
-            }
-        }
-
-        function checkForcedCapture() {
-            forcedCapture = false;
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    if (checkersBoard[r][c] && checkersBoard[r][c].startsWith(currentTurn)) {
-                        if (canCaptureFrom(r, c)) {
-                            forcedCapture = true;
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-
-        function canCaptureFrom(row, col) {
-            const piece = checkersBoard[row][col];
-            if (!piece) return false;
-            const moves = getValidMoves(row, col);
-            return moves.some(m => m.capture);
-        }
-
-        function onSquareClick(row, col) {
-            // Если уже выбрана фигура для продолжения взятия
-            if (selectedCell) {
-                if (selectedCell.row === row && selectedCell.col === col) {
-                    if (!forcedCapture) {
-                        selectedCell = null;
-                        highlightMoves = [];
-                        drawBoard();
-                    }
-                    return;
-                }
-                if (highlightMoves.some(m => m.row === row && m.col === col)) {
-                    const targetMove = highlightMoves.find(m => m.row === row && m.col === col);
-                    if (targetMove) {
-                        executeMove(row, col, targetMove.capture);
-                    }
-                    return;
-                }
-                return;
-            }
-
-            // Выбор своей фигуры
-            if (checkersBoard[row][col] && checkersBoard[row][col].startsWith(currentTurn)) {
-                if (forcedCapture && !canCaptureFrom(row, col)) {
-                    return;
-                }
-                const moves = getValidMoves(row, col);
-                if (moves.length > 0) {
-                    selectedCell = { row, col };
-                    highlightMoves = forcedCapture ?
-                        moves.filter(m => m.capture).map(m => ({ row: m.toRow, col: m.toCol, capture: true })) :
-                        moves.map(m => ({ row: m.toRow, col: m.toCol, capture: m.capture }));
-                } else {
-                    selectedCell = null;
-                    highlightMoves = [];
-                }
-                drawBoard();
-            }
-        }
-
-        function executeMove(toRow, toCol, isCapture) {
-            const piece = checkersBoard[selectedCell.row][selectedCell.col];
-            checkersBoard[toRow][toCol] = piece;
-            checkersBoard[selectedCell.row][selectedCell.col] = null;
-            if (piece === 'white' && toRow === 0) checkersBoard[toRow][toCol] = 'white_king';
-            else if (piece === 'black' && toRow === 7) checkersBoard[toRow][toCol] = 'black_king';
-            if (isCapture) {
-                removeCapturedPiece(selectedCell.row, selectedCell.col, toRow, toCol);
-            }
-
-            // Начинаем формировать запись хода
-            const fromCell = cellName(selectedCell.row, selectedCell.col);
-            const toCell = cellName(toRow, toCol);
-
-            // Если это первый шаг в серии, инициализируем currentMoveSequence
-            if (currentMoveSequence.length === 0) {
-                currentMoveSequence.push(fromCell);
-            }
-            currentMoveSequence.push(toCell);
-
-            selectedCell = null;
-            highlightMoves = [];
-            drawBoard();
-
-            // Продолжение взятия только если предыдущий ход был взятием
-            if (isCapture) {
-                const newMoves = getValidMoves(toRow, toCol).filter(m => m.capture);
-                if (newMoves.length > 0) {
-                    selectedCell = { row: toRow, col: toCol };
-                    highlightMoves = newMoves.map(m => ({ row: m.toRow, col: m.toCol, capture: true }));
-                    drawBoard();
-                    document.getElementById('checkersStatus').textContent =
-                        `${currentTurn === 'white' ? 'Белые' : 'Чёрные'} бьют дальше`;
-                    // Таймер не переключаем, ждём завершения серии
-                    return;
-                }
-            }
-
-            // Завершение хода (серия закончена или одиночный ход)
-            // Определим, был ли этот ход взятием, для правильного разделителя в истории
-            // Мы уже имеем isCapture, но он относится к последнему шагу. Если серия, то все шаги взятия.
-            // Передадим в finalizeCurrentMove флаг, что это capture-ход.
-            // Проще: если currentMoveSequence.length > 2 или isCapture === true, используем ':'
-            const moveWasCapture = isCapture || currentMoveSequence.length > 2;
-            const separator = moveWasCapture ? ':' : '-';
-            const moveStr = currentMoveSequence.join(separator);
-            addMoveToHistory(moveStr);
-            currentMoveSequence = [];
-
-            // Смена игрока
-            currentTurn = currentTurn === 'white' ? 'black' : 'white';
-            checkForcedCapture();
-            document.getElementById('checkersStatus').textContent =
-                `Ход ${currentTurn === 'white' ? 'белых' : 'чёрных'}` +
-                (forcedCapture ? ' (должны взять!)' : '');
-
-            // Таймер для нового игрока
-            resetTimerForNewTurn();
-
-            drawBoard();
-            if (!hasAnyMoves(currentTurn)) {
-                const winner = currentTurn === 'white' ? 'black' : 'white';
-                document.getElementById('checkersStatus').textContent =
-                    `Победа ${winner === 'white' ? 'белых' : 'чёрных'}!`;
-                stopTimer();
-                timerActive = false;
-                updateTimerDisplay();
-                addGameToHistory(winner, moveHistory, timeControl);
-            }
-        }
-
-        function getValidMoves(row, col) {
-            const piece = checkersBoard[row][col];
-            if (!piece) return [];
-            const isKing = piece.endsWith('_king');
-            const isWhite = piece.startsWith('white');
-            const opponent = isWhite ? 'black' : 'white';
-            const moves = [];
-            const captureMoves = [];
-            const directions = [-1, 1];
-            const range = isKing ? 7 : 1;
-            for (let dr of directions) {
-                for (let dc of directions) {
-                    for (let step = 1; step <= range; step++) {
-                        const nr = row + dr * step;
-                        const nc = col + dc * step;
-                        if (nr < 0 || nr > 7 || nc < 0 || nc > 7) break;
-                        const target = checkersBoard[nr]?.[nc];
-                        if (target === null) {
-                            if (!isKing && ((isWhite && dr !== -1) || (!isWhite && dr !== 1))) continue;
-                            moves.push({ toRow: nr, toCol: nc, capture: false });
-                        } else if (target.startsWith(opponent)) {
-                            const jr = nr + dr;
-                            const jc = nc + dc;
-                            if (jr >= 0 && jr <= 7 && jc >= 0 && jc <= 7 && checkersBoard[jr][jc] === null) {
-                                captureMoves.push({ toRow: jr, toCol: jc, capture: true });
+            // ---------- Инициализация BroadcastChannel ----------
+            function initChannel() {
+                try {
+                    channel = new BroadcastChannel(CHANNEL_NAME);
+                    channel.onmessage = (event) => {
+                        if (event.data && event.data.type === 'chat-message') {
+                            const msg = event.data.payload;
+                            // Не добавляем, если это сообщение отправили мы сами (проверяем по временной метке и отправителю)
+                            // Но проще: все сообщения из канала добавляем, кроме тех, что помечены как локально отправленные.
+                            // Используем проверку: если сообщение пришло из канала, и оно не помечено как "уже добавлено локально",
+                            // то добавляем. Чтобы избежать дубля, при локальной отправке мы сразу добавляем в messages,
+                            // а при получении из канала – проверяем, нет ли уже сообщения с таким же id.
+                            const exists = messages.some(m => m.id === msg.id);
+                            if (!exists) {
+                                addMessageToState(msg);
+                                renderMessages();
+                                saveMessagesToStorage();
+                                scrollToBottom();
                             }
-                            break;
-                        } else {
-                            break;
+                        } else if (event.data && event.data.type === 'system') {
+                            // Можно использовать для системных уведомлений
+                            console.log('Системное сообщение из канала:', event.data.payload);
+                        }
+                    };
+
+                    // Оповещаем другие вкладки, что кто-то подключился (необязательно)
+                    channel.postMessage({
+                        type: 'system',
+                        payload: { text: `Пользователь подключился`, timestamp: Date.now() }
+                    });
+
+                    connectionStatus.textContent = '🌐 вкладки синхронизированы';
+                    connectionStatus.style.color = '#a0b0cc';
+                } catch (e) {
+                    channel = null;
+                    connectionStatus.textContent = '⚠️ синхронизация между вкладками недоступна';
+                    connectionStatus.style.color = '#ffaa66';
+                    console.warn('BroadcastChannel не поддерживается или заблокирован. Сообщения будут видны только в этой вкладке.');
+                }
+            }
+
+            // ---------- Загрузка сообщений из localStorage ----------
+            function loadMessagesFromStorage() {
+                try {
+                    const stored = localStorage.getItem(STORAGE_KEY_MESSAGES);
+                    if (stored) {
+                        const parsed = JSON.parse(stored);
+                        if (Array.isArray(parsed)) {
+                            messages = parsed.slice(-MAX_STORED_MESSAGES);
                         }
                     }
+                } catch (e) {
+                    console.warn('Ошибка загрузки сообщений из localStorage:', e);
+                    messages = [];
                 }
             }
-            return captureMoves.length > 0 ? captureMoves : moves;
-        }
 
-        function hasAnyMoves(player) {
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    if (checkersBoard[r][c] && checkersBoard[r][c].startsWith(player)) {
-                        if (getValidMoves(r, c).length > 0) return true;
+            // ---------- Сохранение сообщений в localStorage ----------
+            function saveMessagesToStorage() {
+                try {
+                    const toSave = messages.slice(-MAX_STORED_MESSAGES);
+                    localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(toSave));
+                } catch (e) {
+                    console.warn('Ошибка сохранения сообщений в localStorage:', e);
+                }
+            }
+
+            // ---------- Добавление сообщения в массив ----------
+            function addMessageToState(msg) {
+                messages.push(msg);
+                // Обрезаем до максимального количества
+                if (messages.length > MAX_STORED_MESSAGES) {
+                    messages = messages.slice(-MAX_STORED_MESSAGES);
+                }
+            }
+
+            // ---------- Генерация уникального ID ----------
+            function generateMessageId() {
+                return 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+            }
+
+            // ---------- Форматирование времени ----------
+            function formatTime(timestamp) {
+                const date = new Date(timestamp);
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+                return `${hours}:${minutes}`;
+            }
+
+            // ---------- Определение, своё ли сообщение ----------
+            function isOwnMessage(senderName) {
+                return senderName === currentUserName;
+            }
+
+            // ---------- Отрисовка сообщений ----------
+            function renderMessages() {
+                if (messages.length === 0) {
+                    messagesArea.innerHTML = `
+                        <div class="empty-chat">
+                            <span class="icon">✨</span>
+                            Сообщений пока нет.<br>Напишите что-нибудь, и это увидят все открытые вкладки сайта!
+                        </div>`;
+                    return;
+                }
+
+                let html = '';
+                messages.forEach(msg => {
+                    const isOwn = isOwnMessage(msg.sender);
+                    const isSystem = msg.type === 'system';
+
+                    let messageClass = 'other';
+                    if (isSystem) messageClass = 'system';
+                    else if (isOwn) messageClass = 'own';
+
+                    html += `<div class="message ${messageClass}" data-id="${msg.id}">`;
+                    if (!isSystem) {
+                        html += `<div class="meta">
+                                    <span class="sender-name">${escapeHtml(msg.sender)}</span>
+                                    <span class="time">${formatTime(msg.timestamp)}</span>
+                                </div>`;
+                    }
+                    html += `<div class="bubble">${escapeHtml(msg.text)}</div>`;
+                    if (isSystem) {
+                        html +=
+                            `<div class="meta" style="justify-content:center;"><span class="time">${formatTime(msg.timestamp)}</span></div>`;
+                    }
+                    html += `</div>`;
+                });
+
+                messagesArea.innerHTML = html;
+            }
+
+            // ---------- Экранирование HTML ----------
+            function escapeHtml(text) {
+                const map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return String(text).replace(/[&<>"']/g, m => map[m]);
+            }
+
+            // ---------- Прокрутка вниз ----------
+            function scrollToBottom() {
+                requestAnimationFrame(() => {
+                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                });
+            }
+
+            // ---------- Отправка сообщения ----------
+            function sendMessage() {
+                const text = messageInput.value.trim();
+                if (!text) return;
+
+                if (!currentUserName || currentUserName.trim() === '') {
+                    alert('Пожалуйста, укажите ваше имя перед отправкой сообщения.');
+                    nameInput.focus();
+                    return;
+                }
+
+                const messageObj = {
+                    id: generateMessageId(),
+                    sender: currentUserName.trim(),
+                    text: text,
+                    timestamp: Date.now(),
+                    type: 'user'
+                };
+
+                // Добавляем локально
+                addMessageToState(messageObj);
+                renderMessages();
+                saveMessagesToStorage();
+                scrollToBottom();
+
+                // Отправляем в BroadcastChannel для других вкладок
+                if (channel) {
+                    try {
+                        channel.postMessage({
+                            type: 'chat-message',
+                            payload: messageObj
+                        });
+                    } catch (e) {
+                        console.warn('Ошибка отправки через BroadcastChannel:', e);
+                    }
+                }
+
+                // Очищаем поле ввода
+                messageInput.value = '';
+                messageInput.focus();
+            }
+
+            // ---------- Сохранение имени ----------
+            function saveUserName() {
+                let newName = nameInput.value.trim();
+                if (!newName) {
+                    alert('Имя не может быть пустым.');
+                    nameInput.focus();
+                    return;
+                }
+                if (newName.length > 25) {
+                    newName = newName.substring(0, 25);
+                }
+
+                const oldName = currentUserName;
+                currentUserName = newName;
+                localStorage.setItem(STORAGE_KEY_NAME, currentUserName);
+                currentUserNameDisplay.textContent = currentUserName;
+                nameInput.value = currentUserName;
+
+                // Если имя изменилось, можно добавить системное сообщение
+                if (oldName !== currentUserName && oldName !== 'Гость') {
+                    const systemMsg = {
+                        id: generateMessageId(),
+                        sender: 'Система',
+                        text: `${escapeHtml(oldName)} сменил(а) имя на ${escapeHtml(currentUserName)}`,
+                        timestamp: Date.now(),
+                        type: 'system'
+                    };
+                    addMessageToState(systemMsg);
+                    renderMessages();
+                    saveMessagesToStorage();
+                    scrollToBottom();
+
+                    // Оповещаем другие вкладки о смене имени
+                    if (channel) {
+                        try {
+                            channel.postMessage({
+                                type: 'chat-message',
+                                payload: systemMsg
+                            });
+                        } catch (e) {}
                     }
                 }
             }
-            return false;
-        }
 
-        function resetCheckers() {
-            // Показываем диалог выбора времени, после подтверждения запускаем игру
-            showTimeModal((selectedTime) => {
-                timeControl = selectedTime;
-                setupBoard();
-                checkForcedCapture();
-                drawBoard();
-                document.getElementById('checkersStatus').textContent = 'Ход белых';
-                resetTimerForNewTurn();
-            });
-        }
-
-        // ---------- Модальное окно выбора времени ----------
-        function showTimeModal(callback) {
-            const modal = document.getElementById('timeModal');
-            modal.style.display = 'flex';
-            const startBtn = document.getElementById('startGameBtn');
-            const radioName = 'timeControl';
-            
-            function onStart() {
-                const selected = document.querySelector(`input[name="${radioName}"]:checked`);
-                const value = selected ? parseInt(selected.value, 10) : 0;
-                modal.style.display = 'none';
-                startBtn.removeEventListener('click', onStart);
-                callback(value);
-            }
-
-            startBtn.addEventListener('click', onStart);
-        }
-
-        // ---------- Инициализация кнопок и событий ----------
-        function initCheckers() {
-            document.getElementById('resetCheckers').addEventListener('click', resetCheckers);
-            document.getElementById('clearHistoryBtn').addEventListener('click', () => {
-                if (confirm('Удалить всю историю партий?')) {
-                    clearGameHistory();
+            // ---------- Обработчики событий ----------
+            sendBtn.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
                 }
             });
 
-            // При первой загрузке предлагаем выбрать время и запустить игру
-            showTimeModal((selectedTime) => {
-                timeControl = selectedTime;
-                setupBoard();
-                resetTimerForNewTurn();
+            saveNameBtn.addEventListener('click', saveUserName);
+            nameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveUserName();
+                }
             });
 
-            renderGameHistory();
-        }
+            // ---------- Инициализация при загрузке ----------
+            function init() {
+                // Устанавливаем имя
+                currentUserName = localStorage.getItem(STORAGE_KEY_NAME) || 'Гость';
+                if (currentUserName.length > 25) currentUserName = currentUserName.substring(0, 25);
+                currentUserNameDisplay.textContent = currentUserName;
+                nameInput.value = currentUserName === 'Гость' ? '' : currentUserName;
 
-        // Старт
-        window.addEventListener('DOMContentLoaded', initCheckers);
-    })();
-</script>
+                // Загружаем сообщения
+                loadMessagesFromStorage();
+
+                // Инициализируем канал
+                initChannel();
+
+                // Отрисовываем
+                renderMessages();
+                scrollToBottom();
+
+                // Фокус на поле сообщения
+                messageInput.focus();
+
+                // Добавляем системное сообщение о входе (только для этой вкладки, не транслируем чтобы не спамить)
+                const welcomeMsg = {
+                    id: generateMessageId(),
+                    sender: 'Система',
+                    text: `Добро пожаловать, ${escapeHtml(currentUserName)}! Все открытые вкладки видят сообщения этого чата.`,
+                    timestamp: Date.now(),
+                    type: 'system'
+                };
+                // Не добавляем автоматически, чтобы не засорять историю. Можно добавить, если нужно.
+                // Но лучше показать однократно в консоли или в интерфейсе? 
+                // Покажем как первое системное сообщение при пустом чате.
+                if (messages.length === 0) {
+                    addMessageToState(welcomeMsg);
+                    renderMessages();
+                    saveMessagesToStorage();
+                    scrollToBottom();
+                }
+
+                // Слушаем изменения localStorage из других вкладок (дополнительная синхронизация на случай, если BroadcastChannel не сработал)
+                window.addEventListener('storage', (e) => {
+                    if (e.key === STORAGE_KEY_MESSAGES && e.newValue) {
+                        try {
+                            const newMessages = JSON.parse(e.newValue);
+                            if (Array.isArray(newMessages)) {
+                                // Сравниваем длины и последние id, чтобы не перезаписывать без нужды
+                                const currentIds = new Set(messages.map(m => m.id));
+                                let hasNew = false;
+                                const updatedMessages = [...messages];
+                                newMessages.forEach(msg => {
+                                    if (!currentIds.has(msg.id)) {
+                                        updatedMessages.push(msg);
+                                        hasNew = true;
+                                    }
+                                });
+                                if (hasNew) {
+                                    messages = updatedMessages.slice(-MAX_STORED_MESSAGES);
+                                    renderMessages();
+                                    scrollToBottom();
+                                }
+                            }
+                        } catch (err) {}
+                    }
+                    if (e.key === STORAGE_KEY_NAME && e.newValue) {
+                        // Имя обновилось в другой вкладке — можно обновить отображение, но свое имя не меняем
+                        // Просто для информации
+                    }
+                });
+            }
+
+            // Запуск
+            init();
+
+            // Автофокус на поле сообщения при клике в любом месте (удобство)
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('input') && !e.target.closest('button') && !e.target.closest(
+                        '.messages-area')) {
+                    messageInput.focus();
+                }
+            });
+
+            console.log('🌍 Общий чат запущен. Все открытые вкладки этого сайта видят сообщения друг друга.');
+            console.log('💡 Технология: BroadcastChannel API + localStorage для хранения истории.');
+            console.log('👤 Текущее имя:', currentUserName);
+        })();
+    </script>
 </body>
 </html>
