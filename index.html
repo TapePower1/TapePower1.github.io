@@ -2,539 +2,267 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>2048 — Игра (мышь + свайп)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Общий чат | Все со всех сетей</title>
+    <!-- Firebase SDK (compat – работает везде без сборщика) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
-            background: #faf8ef;
-            font-family: 'Segoe UI', 'Arial', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            user-select: none;
+            font-family:'Segoe UI',sans-serif;
+            background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);
+            min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px;
         }
-
-        .game-container {
-            max-width: 500px;
-            width: 100%;
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+        .chat-container {
+            width:100%; max-width:700px; height:90vh;
+            background:rgba(255,255,255,0.05); backdrop-filter:blur(20px);
+            border-radius:24px; border:1px solid rgba(255,255,255,0.1);
+            box-shadow:0 25px 60px rgba(0,0,0,0.4); display:flex; flex-direction:column; overflow:hidden;
         }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
+        .chat-header {
+            padding:20px 24px; background:rgba(255,255,255,0.03);
+            border-bottom:1px solid rgba(255,255,255,0.1);
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
         }
-
-        .title-section {
-            display: flex;
-            align-items: center;
-            gap: 12px;
+        .chat-header h1 { color:#e0e0ff; font-size:1.6rem; display:flex; align-items:center; gap:10px; }
+        .chat-header h1::before { content:"💬"; font-size:1.8rem; }
+        .user-badge { display:flex; align-items:center; gap:8px; background:rgba(100,150,255,0.2); border-radius:30px; padding:6px 16px; }
+        .online-dot { width:10px; height:10px; background:#4ade80; border-radius:50%; animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{ box-shadow:0 0 8px #4ade80; } 50%{ box-shadow:0 0 20px #4ade80; } }
+        .user-badge span { color:#c0d0ff; font-weight:500; }
+        .status-text { color:#a0b0cc; font-size:0.8rem; background:rgba(255,255,255,0.05); padding:4px 12px; border-radius:20px; }
+        .messages-area {
+            flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:12px;
         }
-
-        h1 {
-            font-size: 2.8rem;
-            font-weight: 800;
-            color: #776e65;
-            letter-spacing: 1px;
-            line-height: 1;
+        .messages-area::-webkit-scrollbar { width:6px; }
+        .messages-area::-webkit-scrollbar-track { background:transparent; }
+        .messages-area::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.2); border-radius:10px; }
+        .message { display:flex; flex-direction:column; max-width:80%; animation:fadeInUp 0.3s; word-break:break-word; }
+        .message.own { align-self:flex-end; }
+        .message.other { align-self:flex-start; }
+        .message.system { align-self:center; max-width:90%; }
+        @keyframes fadeInUp { from{ opacity:0; transform:translateY(15px); } to{ opacity:1; transform:translateY(0); } }
+        .message .bubble { padding:12px 16px; border-radius:18px; font-size:0.95rem; line-height:1.4; color:#f0f0ff; }
+        .message.own .bubble { background:linear-gradient(135deg,#4f6ef6,#3b5de7); border-bottom-right-radius:4px; }
+        .message.other .bubble { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-bottom-left-radius:4px; }
+        .message.system .bubble { background:rgba(255,200,100,0.15); border:1px solid rgba(255,200,100,0.3); text-align:center; font-style:italic; color:#ffd78b; font-size:0.85rem; border-radius:20px; padding:8px 18px; }
+        .message .meta { display:flex; align-items:center; gap:8px; margin-bottom:4px; padding:0 8px; font-size:0.75rem; color:#a0b0cc; }
+        .message.own .meta { justify-content:flex-end; }
+        .message .sender-name { font-weight:600; color:#c8d6ff; }
+        .message .time { opacity:0.7; font-size:0.7rem; }
+        .input-area { padding:16px 24px; background:rgba(255,255,255,0.03); border-top:1px solid rgba(255,255,255,0.1); display:flex; flex-direction:column; gap:10px; }
+        .name-row { display:flex; gap:8px; align-items:center; }
+        .name-row input, .message-row input {
+            flex:1; padding:10px 16px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.2);
+            border-radius:25px; color:#e0e0ff; font-size:0.9rem; outline:none;
         }
-
-        .scores {
-            display: flex;
-            gap: 10px;
+        .name-row input:focus, .message-row input:focus { border-color:#4f6ef6; }
+        .save-name-btn, .send-btn { cursor:pointer; transition:all 0.3s; }
+        .save-name-btn { padding:10px 18px; background:rgba(100,150,255,0.25); border:1px solid rgba(100,150,255,0.4); border-radius:25px; color:#c0d0ff; }
+        .send-btn {
+            width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#4f6ef6,#3b5de7);
+            border:none; color:white; font-size:1.3rem; display:flex; align-items:center; justify-content:center;
+            box-shadow:0 6px 20px rgba(79,110,246,0.4); flex-shrink:0;
         }
-
-        .score-box {
-            background: #bbada0;
-            color: white;
-            padding: 8px 18px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: bold;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 70px;
-        }
-
-        .score-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            opacity: 0.9;
-        }
-
-        .score-value {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #ffffff;
-        }
-
-        .new-game-btn {
-            background: #8f7a66;
-            color: #f9f6f2;
-            border: none;
-            padding: 12px 22px;
-            font-size: 1rem;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            background: #8f7a66;
-            transition: background 0.2s;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 0 #6b5e51;
-            margin-top: 5px;
-        }
-
-        .new-game-btn:hover {
-            background: #9e8b77;
-        }
-
-        .new-game-btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #6b5e51;
-        }
-
-        .game-board {
-            position: relative;
-            background: #bbada0;
-            border-radius: 10px;
-            padding: 12px;
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: repeat(4, 1fr);
-            gap: 12px;
-            aspect-ratio: 1 / 1;
-            width: 100%;
-            box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
-            cursor: pointer; /* показываем, что можно взаимодействовать */
-        }
-
-        .cell {
-            background: #cdc1b4;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.3rem;
-            font-weight: 700;
-            color: #776e65;
-            transition: all 0.15s ease-in-out;
-            aspect-ratio: 1 / 1;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-        }
-
-        .tile-2    { background: #eee4da; }
-        .tile-4    { background: #ede0c8; }
-        .tile-8    { background: #f2b179; color: #f9f6f2; }
-        .tile-16   { background: #f59563; color: #f9f6f2; }
-        .tile-32   { background: #f67c5f; color: #f9f6f2; }
-        .tile-64   { background: #f65e3b; color: #f9f6f2; }
-        .tile-128  { background: #edcf72; color: #f9f6f2; font-size: 2rem; }
-        .tile-256  { background: #edcc61; color: #f9f6f2; font-size: 2rem; }
-        .tile-512  { background: #edc850; color: #f9f6f2; font-size: 2rem; }
-        .tile-1024 { background: #edc53f; color: #f9f6f2; font-size: 1.7rem; }
-        .tile-2048 { background: #edc22e; color: #f9f6f2; font-size: 1.7rem; }
-        .tile-4096 { background: #3c3a32; color: #f9f6f2; font-size: 1.4rem; }
-        .tile-8192 { background: #3c3a32; color: #f9f6f2; font-size: 1.4rem; }
-
-        .message-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(238, 228, 218, 0.75);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 10px;
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: #776e65;
-            text-shadow: 0 2px 5px rgba(255,255,255,0.5);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 10;
-            backdrop-filter: blur(2px);
-        }
-
-        .message-overlay.visible {
-            opacity: 1;
-        }
-
-        .instructions {
-            color: #8f7a66;
-            font-size: 0.9rem;
-            text-align: center;
-            margin-top: 5px;
-            font-weight: 500;
-        }
-
-        @media (max-width: 400px) {
-            .cell {
-                font-size: 1.8rem;
-            }
-            .tile-128, .tile-256, .tile-512 {
-                font-size: 1.6rem;
-            }
-            .tile-1024, .tile-2048 {
-                font-size: 1.4rem;
-            }
-            h1 {
-                font-size: 2.2rem;
-            }
-        }
+        .send-btn:hover { transform:scale(1.05); }
+        .send-btn:disabled { opacity:0.4; cursor:not-allowed; }
     </style>
 </head>
 <body>
-<div class="game-container">
-    <div class="header">
-        <div class="title-section">
-            <h1>2048</h1>
-            <div class="scores">
-                <div class="score-box">
-                    <span class="score-label">Счёт</span>
-                    <span class="score-value" id="scoreDisplay">0</span>
-                </div>
-                <div class="score-box">
-                    <span class="score-label">Рекорд</span>
-                    <span class="score-value" id="bestDisplay">0</span>
-                </div>
+<div class="chat-container">
+    <div class="chat-header">
+        <h1>Общий чат</h1>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <div class="user-badge">
+                <div class="online-dot"></div>
+                <span id="currentUserNameDisplay">Гость</span>
             </div>
+            <div class="status-text" id="connectionStatus">🔌 Подключение...</div>
         </div>
-        <button class="new-game-btn" id="newGameButton">Новая игра</button>
     </div>
 
-    <div style="position: relative;">
-        <div class="game-board" id="gameBoard"></div>
-        <div class="message-overlay" id="messageOverlay"></div>
+    <div class="messages-area" id="messagesArea">
+        <div class="empty-chat">✨ Подключаемся к Firebase...</div>
     </div>
-    <div class="instructions">
-        <strong>Стрелки</strong> на клавиатуре, <strong>мышь</strong> (перетаскивание) или <strong>свайп</strong> на экране
+
+    <div class="input-area">
+        <div class="name-row">
+            <input type="text" id="nameInput" placeholder="Ваше имя..." maxlength="25" autocomplete="off">
+            <button class="save-name-btn" id="saveNameBtn">💾 Сохранить</button>
+        </div>
+        <div class="message-row">
+            <input type="text" id="messageInput" placeholder="Сообщение..." maxlength="500" autocomplete="off">
+            <button class="send-btn" id="sendBtn">➤</button>
+        </div>
     </div>
 </div>
 
 <script>
     (function() {
-        // --- Конфигурация ---
-        const BOARD_SIZE = 4;
-        const WIN_TILE_VALUE = 2048;
+        // ---------- ВАША КОНФИГУРАЦИЯ FIREBASE (только нужные поля) ----------
+        const firebaseConfig = {
+            apiKey: "AIzaSyDcVfTtrCgF0uaeNeQJeIYITn32tFy9gK0",
+            databaseURL: "https://tapepower-3fa61-default-rtdb.firebaseio.com"
+        };
 
-        // --- Состояние игры ---
-        let board = [];
-        let score = 0;
-        let bestScore = 0;
-        let isGameOver = false;
-        let hasWon = false;
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-        // --- DOM элементы ---
-        const gameBoardEl = document.getElementById('gameBoard');
-        const scoreDisplayEl = document.getElementById('scoreDisplay');
-        const bestDisplayEl = document.getElementById('bestDisplay');
-        const messageOverlayEl = document.getElementById('messageOverlay');
-        const newGameButton = document.getElementById('newGameButton');
+        // ---------- DOM элементы ----------
+        const messagesArea = document.getElementById('messagesArea');
+        const nameInput = document.getElementById('nameInput');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const saveNameBtn = document.getElementById('saveNameBtn');
+        const currentUserNameDisplay = document.getElementById('currentUserNameDisplay');
+        const connectionStatus = document.getElementById('connectionStatus');
 
-        // --- Переменные для отслеживания мыши и касаний ---
-        let touchStartX = 0, touchStartY = 0;
-        let mouseStartX = 0, mouseStartY = 0;
-        let isMouseDown = false;
+        // ---------- Состояние ----------
+        const MAX_MESSAGES = 150;
+        let currentUserName = localStorage.getItem('globalChatName') || 'Гость';
+        let messages = [];
 
-        // --- Локальное хранилище рекорда ---
-        function loadBestScore() {
-            try {
-                const saved = localStorage.getItem('2048_bestScore');
-                bestScore = saved && !isNaN(parseInt(saved, 10)) ? parseInt(saved, 10) : 0;
-            } catch (e) {
-                bestScore = 0;
+        // ---------- Утилиты ----------
+        function formatTime(ts) {
+            const d = new Date(ts);
+            return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+        }
+        function isOwn(sender) { return sender === currentUserName; }
+        function escapeHtml(text) {
+            const map = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function render() {
+            if (messages.length === 0) {
+                messagesArea.innerHTML = '<div class="empty-chat">💭 Пока нет сообщений</div>';
+                return;
             }
-            bestDisplayEl.textContent = bestScore;
-        }
-
-        function saveBestScore(value) {
-            if (value > bestScore) {
-                bestScore = value;
-                bestDisplayEl.textContent = bestScore;
-                try {
-                    localStorage.setItem('2048_bestScore', bestScore);
-                } catch (e) { /* игнорируем */ }
-            }
-        }
-
-        // --- Инициализация игрового поля ---
-        function createEmptyBoard() {
-            return Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
-        }
-
-        function getEmptyCells(grid) {
-            const empty = [];
-            for (let i = 0; i < BOARD_SIZE; i++) {
-                for (let j = 0; j < BOARD_SIZE; j++) {
-                    if (grid[i][j] === 0) empty.push({ row: i, col: j });
+            let html = '';
+            messages.forEach(msg => {
+                const own = isOwn(msg.sender);
+                const cls = msg.type === 'system' ? 'system' : (own ? 'own' : 'other');
+                html += `<div class="message ${cls}">`;
+                if (msg.type !== 'system') {
+                    html += `<div class="meta"><span class="sender-name">${escapeHtml(msg.sender)}</span><span class="time">${formatTime(msg.timestamp)}</span></div>`;
                 }
-            }
-            return empty;
-        }
-
-        function addRandomTile(grid) {
-            const empty = getEmptyCells(grid);
-            if (empty.length === 0) return false;
-            const { row, col } = empty[Math.floor(Math.random() * empty.length)];
-            grid[row][col] = Math.random() < 0.9 ? 2 : 4;
-            return true;
-        }
-
-        function initGame() {
-            board = createEmptyBoard();
-            score = 0;
-            isGameOver = false;
-            hasWon = false;
-            updateScoreDisplay();
-            addRandomTile(board);
-            addRandomTile(board);
-            renderBoard();
-            hideMessage();
-        }
-
-        function updateScoreDisplay() {
-            scoreDisplayEl.textContent = score;
-            saveBestScore(score);
-        }
-
-        // --- Отрисовка ---
-        function renderBoard() {
-            gameBoardEl.innerHTML = '';
-            for (let i = 0; i < BOARD_SIZE; i++) {
-                for (let j = 0; j < BOARD_SIZE; j++) {
-                    const value = board[i][j];
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    if (value !== 0) {
-                        cell.classList.add(`tile-${value}`);
-                        cell.textContent = value;
-                    } else {
-                        cell.textContent = '';
-                    }
-                    gameBoardEl.appendChild(cell);
+                html += `<div class="bubble">${escapeHtml(msg.text)}</div>`;
+                if (msg.type === 'system') {
+                    html += `<div class="meta" style="justify-content:center;"><span class="time">${formatTime(msg.timestamp)}</span></div>`;
                 }
-            }
+                html += `</div>`;
+            });
+            messagesArea.innerHTML = html;
         }
 
-        function showMessage(text) {
-            messageOverlayEl.textContent = text;
-            messageOverlayEl.classList.add('visible');
+        function scrollBottom() {
+            requestAnimationFrame(() => { messagesArea.scrollTop = messagesArea.scrollHeight; });
         }
 
-        function hideMessage() {
-            messageOverlayEl.classList.remove('visible');
-        }
+        // ---------- Работа с Firebase ----------
+        function initFirebase() {
+            connectionStatus.textContent = '🔌 Подключение к Firebase...';
+            const messagesRef = database.ref('messages');
 
-        // --- Механика движения ---
-        function slideAndMerge(row) {
-            let filtered = row.filter(v => v !== 0);
-            let merged = [];
-            let skip = false;
-            for (let i = 0; i < filtered.length; i++) {
-                if (skip) { skip = false; continue; }
-                if (i < filtered.length - 1 && filtered[i] === filtered[i + 1]) {
-                    const mergedValue = filtered[i] * 2;
-                    merged.push(mergedValue);
-                    score += mergedValue;
-                    skip = true;
+            // Слушаем добавление новых сообщений
+            messagesRef.limitToLast(MAX_MESSAGES).on('child_added', (snapshot) => {
+                const msg = snapshot.val();
+                if (msg && !messages.some(m => m.id === msg.id)) {
+                    messages.push(msg);
+                    if (messages.length > MAX_MESSAGES) messages = messages.slice(-MAX_MESSAGES);
+                    render();
+                    scrollBottom();
+                }
+            });
+
+            // Отслеживаем состояние подключения
+            const connectedRef = database.ref('.info/connected');
+            connectedRef.on('value', (snap) => {
+                if (snap.val() === true) {
+                    connectionStatus.textContent = '🟢 Онлайн (все сети)';
+                    connectionStatus.style.color = '#4ade80';
                 } else {
-                    merged.push(filtered[i]);
+                    connectionStatus.textContent = '⛔ Нет сети. Переподключение...';
+                    connectionStatus.style.color = '#ff6666';
                 }
-            }
-            while (merged.length < BOARD_SIZE) merged.push(0);
-            return merged;
-        }
-
-        function moveLeft(grid) {
-            let moved = false;
-            const newGrid = grid.map(row => {
-                const original = [...row];
-                const newRow = slideAndMerge(original);
-                if (JSON.stringify(original) !== JSON.stringify(newRow)) moved = true;
-                return newRow;
             });
-            return { grid: newGrid, moved };
-        }
 
-        function moveRight(grid) {
-            let moved = false;
-            const newGrid = grid.map(row => {
-                const reversed = [...row].reverse();
-                const merged = slideAndMerge(reversed);
-                const newRow = merged.reverse();
-                if (JSON.stringify(row) !== JSON.stringify(newRow)) moved = true;
-                return newRow;
-            });
-            return { grid: newGrid, moved };
-        }
-
-        function transpose(matrix) {
-            return matrix[0].map((_, col) => matrix.map(row => row[col]));
-        }
-
-        function moveUp(grid) {
-            const transposed = transpose(grid);
-            const { grid: movedGrid, moved } = moveLeft(transposed);
-            return { grid: transpose(movedGrid), moved };
-        }
-
-        function moveDown(grid) {
-            const transposed = transpose(grid);
-            const { grid: movedGrid, moved } = moveRight(transposed);
-            return { grid: transpose(movedGrid), moved };
-        }
-
-        function executeMove(direction) {
-            if (isGameOver) return false;
-            let result;
-            switch (direction) {
-                case 'left':  result = moveLeft(board); break;
-                case 'right': result = moveRight(board); break;
-                case 'up':    result = moveUp(board); break;
-                case 'down':  result = moveDown(board); break;
-                default: return false;
-            }
-            if (!result.moved) return false;
-
-            board = result.grid;
-            updateScoreDisplay();
-            addRandomTile(board);
-            renderBoard();
-
-            if (!hasWon && checkWinCondition()) {
-                hasWon = true;
-                showMessage('🎉 2048! Победа!');
-            }
-            if (checkGameOver()) {
-                isGameOver = true;
-                showMessage('😔 Игра окончена');
-            }
-            return true;
-        }
-
-        function checkGameOver() {
-            if (getEmptyCells(board).length > 0) return false;
-            for (let i = 0; i < BOARD_SIZE; i++) {
-                for (let j = 0; j < BOARD_SIZE; j++) {
-                    const val = board[i][j];
-                    if ((j < BOARD_SIZE - 1 && board[i][j+1] === val) ||
-                        (i < BOARD_SIZE - 1 && board[i+1][j] === val)) return false;
+            // Первичная загрузка старых сообщений
+            messagesRef.orderByKey().limitToLast(MAX_MESSAGES).once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const loaded = Object.values(data);
+                    messages = loaded.slice(-MAX_MESSAGES);
+                } else {
+                    messages = [];
                 }
+                render();
+                scrollBottom();
+            });
+        }
+
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return;
+            if (!currentUserName || currentUserName === 'Гость') {
+                alert('Пожалуйста, укажите имя перед отправкой.');
+                return;
             }
-            return true;
+
+            const msg = {
+                id: 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7),
+                sender: currentUserName,
+                text: text,
+                timestamp: Date.now(),
+                type: 'user'
+            };
+
+            database.ref('messages').push(msg);
+            messageInput.value = '';
+            messageInput.focus();
         }
 
-        function checkWinCondition() {
-            return board.some(row => row.includes(WIN_TILE_VALUE));
-        }
+        function saveName() {
+            let newName = nameInput.value.trim();
+            if (!newName) { alert('Имя не может быть пустым.'); return; }
+            if (newName.length > 25) newName = newName.substring(0, 25);
 
-        // --- Обработчики: клавиатура ---
-        function handleKeyDown(e) {
-            if (e.key.startsWith('Arrow')) {
-                e.preventDefault();
-                const dirMap = {
-                    ArrowLeft: 'left', ArrowRight: 'right',
-                    ArrowUp: 'up', ArrowDown: 'down'
+            const oldName = currentUserName;
+            currentUserName = newName;
+            localStorage.setItem('globalChatName', currentUserName);
+            currentUserNameDisplay.textContent = currentUserName;
+            nameInput.value = currentUserName;
+
+            if (oldName !== currentUserName && oldName !== 'Гость') {
+                const renameMsg = {
+                    id: 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7),
+                    sender: 'Система',
+                    text: `${escapeHtml(oldName)} сменил имя на ${escapeHtml(currentUserName)}`,
+                    timestamp: Date.now(),
+                    type: 'system'
                 };
-                executeMove(dirMap[e.key]);
+                database.ref('messages').push(renameMsg);
             }
         }
 
-        // --- Обработчики: касания (свайп) ---
-        function handleTouchStart(e) {
-            if (e.touches.length === 1) {
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-            }
-        }
+        // ---------- Обработчики ----------
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
+        });
+        saveNameBtn.addEventListener('click', saveName);
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); saveName(); }
+        });
 
-        function handleTouchEnd(e) {
-            if (touchStartX === 0 && touchStartY === 0) return;
-            const touchEndX = e.changedTouches[0].clientX;
-            const touchEndY = e.changedTouches[0].clientY;
-            handleSwipeGesture(touchEndX - touchStartX, touchEndY - touchStartY);
-            touchStartX = 0; touchStartY = 0;
-        }
-
-        // --- Обработчики: мышь (перетаскивание) ---
-        function handleMouseDown(e) {
-            e.preventDefault(); // предотвращаем выделение текста
-            isMouseDown = true;
-            mouseStartX = e.clientX;
-            mouseStartY = e.clientY;
-        }
-
-        function handleMouseUp(e) {
-            if (!isMouseDown) return;
-            isMouseDown = false;
-            const dx = e.clientX - mouseStartX;
-            const dy = e.clientY - mouseStartY;
-            handleSwipeGesture(dx, dy);
-        }
-
-        // Общая функция для определения направления по смещению
-        function handleSwipeGesture(dx, dy) {
-            const minDist = 30;
-            if (Math.abs(dx) < minDist && Math.abs(dy) < minDist) return;
-
-            let direction;
-            if (Math.abs(dx) > Math.abs(dy)) {
-                direction = dx > 0 ? 'right' : 'left';
-            } else {
-                direction = dy > 0 ? 'down' : 'up';
-            }
-            executeMove(direction);
-        }
-
-        // Предотвращаем стандартное поведение перетаскивания на доске
-        function preventDrag(e) {
-            e.preventDefault();
-        }
-
-        // --- Привязка событий ---
-        function bindEvents() {
-            window.addEventListener('keydown', handleKeyDown);
-
-            // Свайпы (тач)
-            gameBoardEl.addEventListener('touchstart', handleTouchStart, { passive: false });
-            gameBoardEl.addEventListener('touchend', handleTouchEnd, { passive: false });
-            gameBoardEl.addEventListener('touchmove', preventDrag, { passive: false });
-
-            // Мышь
-            gameBoardEl.addEventListener('mousedown', handleMouseDown);
-            document.addEventListener('mouseup', handleMouseUp);
-            gameBoardEl.addEventListener('dragstart', preventDrag); // на всякий случай
-
-            newGameButton.addEventListener('click', initGame);
-        }
-
-        // Старт
-        loadBestScore();
-        initGame();
-        bindEvents();
+        // ---------- Старт ----------
+        currentUserNameDisplay.textContent = currentUserName;
+        nameInput.value = currentUserName === 'Гость' ? '' : currentUserName;
+        initFirebase();
+        messageInput.focus();
     })();
 </script>
 </body>
