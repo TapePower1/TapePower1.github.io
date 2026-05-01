@@ -3,267 +3,792 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Общий чат | Все со всех сетей</title>
-    <!-- Firebase SDK (compat – работает везде без сборщика) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-
+    <title>Конвейер величин — Универсальный конвертер</title>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --bg: #f0f4f8;
+            --card-bg: #ffffff;
+            --primary: #3b5998;
+            --primary-hover: #2d4373;
+            --accent: #e8873b;
+            --accent-hover: #c96e2a;
+            --text: #1a1a2e;
+            --text-light: #555;
+            --border: #dde4ed;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
+            --radius: 14px;
+            --radius-sm: 8px;
+            --transition: 0.2s ease;
+            --input-bg: #f8fafc;
+            --tag-bg: #eef2f9;
+            --tag-text: #3b5998;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family:'Segoe UI',sans-serif;
-            background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);
-            min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #e8edf5 0%, #dce3ef 30%, #f0f4f8 60%, #e4eaf3 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text);
         }
-        .chat-container {
-            width:100%; max-width:700px; height:90vh;
-            background:rgba(255,255,255,0.05); backdrop-filter:blur(20px);
-            border-radius:24px; border:1px solid rgba(255,255,255,0.1);
-            box-shadow:0 25px 60px rgba(0,0,0,0.4); display:flex; flex-direction:column; overflow:hidden;
+
+        .app-container {
+            width: 100%;
+            max-width: 820px;
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow-lg);
+            padding: 32px 28px 36px;
+            position: relative;
+            overflow: hidden;
         }
-        .chat-header {
-            padding:20px 24px; background:rgba(255,255,255,0.03);
-            border-bottom:1px solid rgba(255,255,255,0.1);
-            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+
+        .app-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #3b5998, #5b7cc5, #e8873b, #f0a665, #3b5998);
+            background-size: 200% 100%;
+            animation: gradientShift 8s ease infinite;
         }
-        .chat-header h1 { color:#e0e0ff; font-size:1.6rem; display:flex; align-items:center; gap:10px; }
-        .chat-header h1::before { content:"💬"; font-size:1.8rem; }
-        .user-badge { display:flex; align-items:center; gap:8px; background:rgba(100,150,255,0.2); border-radius:30px; padding:6px 16px; }
-        .online-dot { width:10px; height:10px; background:#4ade80; border-radius:50%; animation:pulse 2s infinite; }
-        @keyframes pulse { 0%,100%{ box-shadow:0 0 8px #4ade80; } 50%{ box-shadow:0 0 20px #4ade80; } }
-        .user-badge span { color:#c0d0ff; font-weight:500; }
-        .status-text { color:#a0b0cc; font-size:0.8rem; background:rgba(255,255,255,0.05); padding:4px 12px; border-radius:20px; }
-        .messages-area {
-            flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:12px;
+
+        @keyframes gradientShift {
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
         }
-        .messages-area::-webkit-scrollbar { width:6px; }
-        .messages-area::-webkit-scrollbar-track { background:transparent; }
-        .messages-area::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.2); border-radius:10px; }
-        .message { display:flex; flex-direction:column; max-width:80%; animation:fadeInUp 0.3s; word-break:break-word; }
-        .message.own { align-self:flex-end; }
-        .message.other { align-self:flex-start; }
-        .message.system { align-self:center; max-width:90%; }
-        @keyframes fadeInUp { from{ opacity:0; transform:translateY(15px); } to{ opacity:1; transform:translateY(0); } }
-        .message .bubble { padding:12px 16px; border-radius:18px; font-size:0.95rem; line-height:1.4; color:#f0f0ff; }
-        .message.own .bubble { background:linear-gradient(135deg,#4f6ef6,#3b5de7); border-bottom-right-radius:4px; }
-        .message.other .bubble { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-bottom-left-radius:4px; }
-        .message.system .bubble { background:rgba(255,200,100,0.15); border:1px solid rgba(255,200,100,0.3); text-align:center; font-style:italic; color:#ffd78b; font-size:0.85rem; border-radius:20px; padding:8px 18px; }
-        .message .meta { display:flex; align-items:center; gap:8px; margin-bottom:4px; padding:0 8px; font-size:0.75rem; color:#a0b0cc; }
-        .message.own .meta { justify-content:flex-end; }
-        .message .sender-name { font-weight:600; color:#c8d6ff; }
-        .message .time { opacity:0.7; font-size:0.7rem; }
-        .input-area { padding:16px 24px; background:rgba(255,255,255,0.03); border-top:1px solid rgba(255,255,255,0.1); display:flex; flex-direction:column; gap:10px; }
-        .name-row { display:flex; gap:8px; align-items:center; }
-        .name-row input, .message-row input {
-            flex:1; padding:10px 16px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.2);
-            border-radius:25px; color:#e0e0ff; font-size:0.9rem; outline:none;
+
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+            padding-top: 6px;
         }
-        .name-row input:focus, .message-row input:focus { border-color:#4f6ef6; }
-        .save-name-btn, .send-btn { cursor:pointer; transition:all 0.3s; }
-        .save-name-btn { padding:10px 18px; background:rgba(100,150,255,0.25); border:1px solid rgba(100,150,255,0.4); border-radius:25px; color:#c0d0ff; }
-        .send-btn {
-            width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#4f6ef6,#3b5de7);
-            border:none; color:white; font-size:1.3rem; display:flex; align-items:center; justify-content:center;
-            box-shadow:0 6px 20px rgba(79,110,246,0.4); flex-shrink:0;
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b5998, #1a1a2e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
         }
-        .send-btn:hover { transform:scale(1.05); }
-        .send-btn:disabled { opacity:0.4; cursor:not-allowed; }
+        .header .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+
+        /* Category Selector */
+        .category-scroll {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            justify-content: center;
+            margin: 18px 0 22px;
+            padding: 0 4px;
+        }
+        .cat-btn {
+            padding: 9px 16px;
+            border-radius: 22px;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--text);
+            transition: all var(--transition);
+            white-space: nowrap;
+            user-select: none;
+            letter-spacing: 0.01em;
+        }
+        .cat-btn:hover {
+            border-color: #bcc7db;
+            background: #f6f8fb;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .cat-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 4px 14px rgba(59, 89, 152, 0.3);
+            font-weight: 600;
+            transform: translateY(-1px);
+        }
+        .cat-btn .cat-icon {
+            margin-right: 5px;
+            font-size: 1rem;
+        }
+
+        /* Converter Card */
+        .converter-card {
+            background: #fafbfd;
+            border-radius: var(--radius);
+            padding: 24px 22px 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .converter-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 18px;
+            text-align: center;
+            letter-spacing: 0.02em;
+        }
+        .converter-row {
+            display: flex;
+            gap: 14px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 130px;
+            flex: 1;
+        }
+        .field-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .field-group select,
+        .field-group input {
+            padding: 11px 14px;
+            border-radius: var(--radius-sm);
+            border: 1.5px solid var(--border);
+            font-size: 0.95rem;
+            background: var(--input-bg);
+            color: var(--text);
+            transition: all var(--transition);
+            font-family: inherit;
+            width: 100%;
+            min-width: 100px;
+        }
+        .field-group select:focus,
+        .field-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 89, 152, 0.08);
+            background: #fff;
+        }
+        .field-group input {
+            font-size: 1.2rem;
+            font-weight: 500;
+            text-align: center;
+            letter-spacing: 0.02em;
+        }
+        .swap-btn-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-bottom: 6px;
+        }
+        .swap-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+        .swap-btn:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            transform: rotate(180deg);
+            box-shadow: 0 4px 12px rgba(59, 89, 152, 0.25);
+        }
+
+        /* Result */
+        .result-area {
+            text-align: center;
+            margin-top: 20px;
+            padding: 16px 20px;
+            background: #fff;
+            border-radius: var(--radius-sm);
+            border: 1.5px dashed var(--border);
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .result-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        .result-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 0.02em;
+            word-break: break-all;
+        }
+        .result-unit {
+            font-size: 0.95rem;
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        /* Numeral system special */
+        .numeral-info {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 8px;
+        }
+        .numeral-info code {
+            background: #eef2f9;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        /* Error */
+        .error-msg {
+            color: #d32f2f;
+            text-align: center;
+            font-size: 0.85rem;
+            margin-top: 6px;
+            font-weight: 500;
+            display: none;
+        }
+        .error-msg.visible {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .app-container {
+                padding: 20px 14px 24px;
+                border-radius: 16px;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            .cat-btn {
+                padding: 7px 11px;
+                font-size: 0.78rem;
+                border-radius: 18px;
+            }
+            .converter-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            .swap-btn-wrap {
+                padding: 4px 0;
+            }
+            .swap-btn {
+                width: 34px;
+                height: 34px;
+                font-size: 1rem;
+            }
+            .field-group {
+                min-width: auto;
+            }
+            .result-value {
+                font-size: 1.3rem;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="chat-container">
-    <div class="chat-header">
-        <h1>Общий чат</h1>
-        <div style="display:flex;align-items:center;gap:12px;">
-            <div class="user-badge">
-                <div class="online-dot"></div>
-                <span id="currentUserNameDisplay">Гость</span>
+
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔄 Конвейер величин</h1>
+            <p class="subtitle">Универсальный конвертер единиц измерения</p>
+        </div>
+
+        <!-- Category Buttons -->
+        <div class="category-scroll" id="categoryButtons">
+            <button class="cat-btn active" data-cat="length"><span class="cat-icon">📏</span>Длина</button>
+            <button class="cat-btn" data-cat="weight"><span class="cat-icon">⚖️</span>Вес</button>
+            <button class="cat-btn" data-cat="area"><span class="cat-icon">📐</span>Площадь</button>
+            <button class="cat-btn" data-cat="volume"><span class="cat-icon">🧪</span>Объём</button>
+            <button class="cat-btn" data-cat="speed"><span class="cat-icon">🚀</span>Скорость</button>
+            <button class="cat-btn" data-cat="temperature"><span class="cat-icon">🌡️</span>Температура</button>
+            <button class="cat-btn" data-cat="energy"><span class="cat-icon">⚡</span>Энергия</button>
+            <button class="cat-btn" data-cat="time"><span class="cat-icon">⏱️</span>Время</button>
+            <button class="cat-btn" data-cat="data"><span class="cat-icon">💾</span>Данные</button>
+            <button class="cat-btn" data-cat="angle"><span class="cat-icon">📐</span>Угол</button>
+            <button class="cat-btn" data-cat="currency"><span class="cat-icon">💱</span>Валюта</button>
+            <button class="cat-btn" data-cat="numeral"><span class="cat-icon">🔢</span>Системы</button>
+        </div>
+
+        <!-- Converter Card -->
+        <div class="converter-card" id="converterCard">
+            <div class="converter-title" id="converterTitle">Длина</div>
+            <div class="converter-row">
+                <div class="field-group">
+                    <label for="unitFrom">Из</label>
+                    <select id="unitFrom"></select>
+                </div>
+                <div class="swap-btn-wrap">
+                    <button class="swap-btn" id="swapBtn" title="Поменять местами">⇄</button>
+                </div>
+                <div class="field-group">
+                    <label for="unitTo">В</label>
+                    <select id="unitTo"></select>
+                </div>
             </div>
-            <div class="status-text" id="connectionStatus">🔌 Подключение...</div>
+            <div class="converter-row" style="margin-top:14px;">
+                <div class="field-group" style="flex:2;">
+                    <label for="inputValue">Значение</label>
+                    <input type="text" id="inputValue" placeholder="Введите число" value="1">
+                </div>
+            </div>
+            <div class="result-area" id="resultArea">
+                <span class="result-label">Результат:</span>
+                <span class="result-value" id="resultValue">—</span>
+                <span class="result-unit" id="resultUnit"></span>
+            </div>
+            <div class="error-msg" id="errorMsg"></div>
+            <div class="numeral-info" id="numeralInfo" style="display:none;"></div>
         </div>
     </div>
 
-    <div class="messages-area" id="messagesArea">
-        <div class="empty-chat">✨ Подключаемся к Firebase...</div>
-    </div>
-
-    <div class="input-area">
-        <div class="name-row">
-            <input type="text" id="nameInput" placeholder="Ваше имя..." maxlength="25" autocomplete="off">
-            <button class="save-name-btn" id="saveNameBtn">💾 Сохранить</button>
-        </div>
-        <div class="message-row">
-            <input type="text" id="messageInput" placeholder="Сообщение..." maxlength="500" autocomplete="off">
-            <button class="send-btn" id="sendBtn">➤</button>
-        </div>
-    </div>
-</div>
-
-<script>
-    (function() {
-        // ---------- ВАША КОНФИГУРАЦИЯ FIREBASE (только нужные поля) ----------
-        const firebaseConfig = {
-            apiKey: "AIzaSyDcVfTtrCgF0uaeNeQJeIYITn32tFy9gK0",
-            databaseURL: "https://tapepower-3fa61-default-rtdb.firebaseio.com"
-        };
-
-        // Инициализация Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
-        // ---------- DOM элементы ----------
-        const messagesArea = document.getElementById('messagesArea');
-        const nameInput = document.getElementById('nameInput');
-        const messageInput = document.getElementById('messageInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const saveNameBtn = document.getElementById('saveNameBtn');
-        const currentUserNameDisplay = document.getElementById('currentUserNameDisplay');
-        const connectionStatus = document.getElementById('connectionStatus');
-
-        // ---------- Состояние ----------
-        const MAX_MESSAGES = 150;
-        let currentUserName = localStorage.getItem('globalChatName') || 'Гость';
-        let messages = [];
-
-        // ---------- Утилиты ----------
-        function formatTime(ts) {
-            const d = new Date(ts);
-            return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-        }
-        function isOwn(sender) { return sender === currentUserName; }
-        function escapeHtml(text) {
-            const map = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' };
-            return String(text).replace(/[&<>"']/g, m => map[m]);
-        }
-
-        function render() {
-            if (messages.length === 0) {
-                messagesArea.innerHTML = '<div class="empty-chat">💭 Пока нет сообщений</div>';
-                return;
-            }
-            let html = '';
-            messages.forEach(msg => {
-                const own = isOwn(msg.sender);
-                const cls = msg.type === 'system' ? 'system' : (own ? 'own' : 'other');
-                html += `<div class="message ${cls}">`;
-                if (msg.type !== 'system') {
-                    html += `<div class="meta"><span class="sender-name">${escapeHtml(msg.sender)}</span><span class="time">${formatTime(msg.timestamp)}</span></div>`;
-                }
-                html += `<div class="bubble">${escapeHtml(msg.text)}</div>`;
-                if (msg.type === 'system') {
-                    html += `<div class="meta" style="justify-content:center;"><span class="time">${formatTime(msg.timestamp)}</span></div>`;
-                }
-                html += `</div>`;
-            });
-            messagesArea.innerHTML = html;
-        }
-
-        function scrollBottom() {
-            requestAnimationFrame(() => { messagesArea.scrollTop = messagesArea.scrollHeight; });
-        }
-
-        // ---------- Работа с Firebase ----------
-        function initFirebase() {
-            connectionStatus.textContent = '🔌 Подключение к Firebase...';
-            const messagesRef = database.ref('messages');
-
-            // Слушаем добавление новых сообщений
-            messagesRef.limitToLast(MAX_MESSAGES).on('child_added', (snapshot) => {
-                const msg = snapshot.val();
-                if (msg && !messages.some(m => m.id === msg.id)) {
-                    messages.push(msg);
-                    if (messages.length > MAX_MESSAGES) messages = messages.slice(-MAX_MESSAGES);
-                    render();
-                    scrollBottom();
-                }
-            });
-
-            // Отслеживаем состояние подключения
-            const connectedRef = database.ref('.info/connected');
-            connectedRef.on('value', (snap) => {
-                if (snap.val() === true) {
-                    connectionStatus.textContent = '🟢 Онлайн (все сети)';
-                    connectionStatus.style.color = '#4ade80';
-                } else {
-                    connectionStatus.textContent = '⛔ Нет сети. Переподключение...';
-                    connectionStatus.style.color = '#ff6666';
-                }
-            });
-
-            // Первичная загрузка старых сообщений
-            messagesRef.orderByKey().limitToLast(MAX_MESSAGES).once('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    const loaded = Object.values(data);
-                    messages = loaded.slice(-MAX_MESSAGES);
-                } else {
-                    messages = [];
-                }
-                render();
-                scrollBottom();
-            });
-        }
-
-        function sendMessage() {
-            const text = messageInput.value.trim();
-            if (!text) return;
-            if (!currentUserName || currentUserName === 'Гость') {
-                alert('Пожалуйста, укажите имя перед отправкой.');
-                return;
-            }
-
-            const msg = {
-                id: 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7),
-                sender: currentUserName,
-                text: text,
-                timestamp: Date.now(),
-                type: 'user'
+    <script>
+        (function() {
+            // ============ CONVERSION DATA ============
+            const conversionData = {
+                length: {
+                    name: 'Длина',
+                    baseUnit: 'метр',
+                    units: {
+                        'миллиметр': { factor: 0.001, symbol: 'мм' },
+                        'сантиметр': { factor: 0.01, symbol: 'см' },
+                        'дециметр': { factor: 0.1, symbol: 'дм' },
+                        'метр': { factor: 1, symbol: 'м' },
+                        'километр': { factor: 1000, symbol: 'км' },
+                        'дюйм': { factor: 0.0254, symbol: 'in' },
+                        'фут': { factor: 0.3048, symbol: 'ft' },
+                        'миля': { factor: 1609.344, symbol: 'mi' },
+                    },
+                },
+                weight: {
+                    name: 'Вес / Масса',
+                    baseUnit: 'грамм',
+                    units: {
+                        'миллиграмм': { factor: 0.001, symbol: 'мг' },
+                        'грамм': { factor: 1, symbol: 'г' },
+                        'килограмм': { factor: 1000, symbol: 'кг' },
+                        'унция': { factor: 28.349523125, symbol: 'oz' },
+                        'фунт': { factor: 453.59237, symbol: 'lb' },
+                        'центнер': { factor: 100000, symbol: 'ц' },
+                        'тонна': { factor: 1000000, symbol: 'т' },
+                    },
+                },
+                area: {
+                    name: 'Площадь',
+                    baseUnit: 'кв. метр',
+                    units: {
+                        'кв. миллиметр': { factor: 0.000001, symbol: 'мм²' },
+                        'кв. сантиметр': { factor: 0.0001, symbol: 'см²' },
+                        'кв. дециметр': { factor: 0.01, symbol: 'дм²' },
+                        'кв. метр': { factor: 1, symbol: 'м²' },
+                        'ар': { factor: 100, symbol: 'а' },
+                        'гектар': { factor: 10000, symbol: 'га' },
+                        'кв. километр': { factor: 1000000, symbol: 'км²' },
+                        'акр': { factor: 4046.8564224, symbol: 'ac' },
+                        'кв. дюйм': { factor: 0.00064516, symbol: 'in²' },
+                        'кв. фут': { factor: 0.09290304, symbol: 'ft²' },
+                        'кв. миля': { factor: 2589988.110336, symbol: 'mi²' },
+                    },
+                },
+                volume: {
+                    name: 'Объём',
+                    baseUnit: 'куб. метр',
+                    units: {
+                        'куб. сантиметр': { factor: 0.000001, symbol: 'см³' },
+                        'куб. дециметр': { factor: 0.001, symbol: 'дм³' },
+                        'куб. метр': { factor: 1, symbol: 'м³' },
+                        'куб. километр': { factor: 1e9, symbol: 'км³' },
+                        'чайная ложка': { factor: 4.92892159375e-6, symbol: 'ч.л.' },
+                        'столовая ложка': { factor: 1.478676478125e-5, symbol: 'ст.л.' },
+                        'чашка': { factor: 0.0002365882365, symbol: 'cup' },
+                        'галлон': { factor: 0.003785411784, symbol: 'gal' },
+                    },
+                },
+                speed: {
+                    name: 'Скорость',
+                    baseUnit: 'метр/сек',
+                    units: {
+                        'метр/сек': { factor: 1, symbol: 'м/с' },
+                        'км/час': { factor: 0.27777777778, symbol: 'км/ч' },
+                        'миля/час': { factor: 0.44704, symbol: 'mph' },
+                        'узел': { factor: 0.51444444444, symbol: 'уз' },
+                    },
+                },
+                temperature: {
+                    name: 'Температура',
+                    baseUnit: null,
+                    units: {
+                        'Цельсия': { symbol: '°C' },
+                        'Фаренгейт': { symbol: '°F' },
+                        'Кельвин': { symbol: 'K' },
+                    },
+                },
+                energy: {
+                    name: 'Энергия',
+                    baseUnit: 'джоуль',
+                    units: {
+                        'джоуль': { factor: 1, symbol: 'Дж' },
+                        'калория': { factor: 4.184, symbol: 'кал' },
+                        'килокалория': { factor: 4184, symbol: 'ккал' },
+                        'килоджоуль': { factor: 1000, symbol: 'кДж' },
+                        'киловатт-час': { factor: 3600000, symbol: 'кВт·ч' },
+                        'ньютон-метр': { factor: 1, symbol: 'Н·м' },
+                    },
+                },
+                time: {
+                    name: 'Время',
+                    baseUnit: 'секунда',
+                    units: {
+                        'миллисекунда': { factor: 0.001, symbol: 'мс' },
+                        'секунда': { factor: 1, symbol: 'с' },
+                        'минута': { factor: 60, symbol: 'мин' },
+                        'час': { factor: 3600, symbol: 'ч' },
+                        'день': { factor: 86400, symbol: 'дн' },
+                        'неделя': { factor: 604800, symbol: 'нед' },
+                        'год': { factor: 31536000, symbol: 'г' },
+                    },
+                },
+                data: {
+                    name: 'Данные',
+                    baseUnit: 'байт',
+                    units: {
+                        'бит': { factor: 0.125, symbol: 'бит' },
+                        'байт': { factor: 1, symbol: 'Б' },
+                        'килобайт': { factor: 1024, symbol: 'КБ' },
+                        'мегабайт': { factor: 1048576, symbol: 'МБ' },
+                        'гигабайт': { factor: 1073741824, symbol: 'ГБ' },
+                        'терабайт': { factor: 1099511627776, symbol: 'ТБ' },
+                        'петабайт': { factor: 1125899906842624, symbol: 'ПБ' },
+                    },
+                },
+                angle: {
+                    name: 'Угол',
+                    baseUnit: 'радиан',
+                    units: {
+                        'градус': { factor: Math.PI / 180, symbol: '°' },
+                        'радиан': { factor: 1, symbol: 'рад' },
+                    },
+                },
+                currency: {
+                    name: 'Валюта',
+                    baseUnit: 'USD',
+                    units: {
+                        'USD': { factor: 1, symbol: '$' },
+                        'EUR': { factor: 0.92, symbol: '€' },
+                        'RUB': { factor: 92, symbol: '₽' },
+                        'GBP': { factor: 0.79, symbol: '£' },
+                        'JPY': { factor: 150, symbol: '¥' },
+                        'CNY': { factor: 7.24, symbol: '¥' },
+                        'INR': { factor: 83, symbol: '₹' },
+                        'AUD': { factor: 1.53, symbol: 'A$' },
+                        'CAD': { factor: 1.36, symbol: 'C$' },
+                        'CHF': { factor: 0.89, symbol: 'Fr' },
+                        'BRL': { factor: 5.05, symbol: 'R$' },
+                        'KRW': { factor: 1325, symbol: '₩' },
+                        'MXN': { factor: 16.8, symbol: 'MX$' },
+                        'TRY': { factor: 30.5, symbol: '₺' },
+                        'SEK': { factor: 10.4, symbol: 'kr' },
+                        'NOK': { factor: 10.6, symbol: 'kr' },
+                        'DKK': { factor: 6.9, symbol: 'kr' },
+                        'PLN': { factor: 4.0, symbol: 'zł' },
+                        'CZK': { factor: 22.7, symbol: 'Kč' },
+                        'HUF': { factor: 355, symbol: 'Ft' },
+                        'THB': { factor: 35.5, symbol: '฿' },
+                        'SGD': { factor: 1.34, symbol: 'S$' },
+                        'HKD': { factor: 7.82, symbol: 'HK$' },
+                        'NZD': { factor: 1.63, symbol: 'NZ$' },
+                        'ZAR': { factor: 18.6, symbol: 'R' },
+                        'AED': { factor: 3.67, symbol: 'د.إ' },
+                        'SAR': { factor: 3.75, symbol: '﷼' },
+                        'ARS': { factor: 850, symbol: 'AR$' },
+                        'EGP': { factor: 47, symbol: 'E£' },
+                        'PHP': { factor: 56, symbol: '₱' },
+                        'MYR': { factor: 4.65, symbol: 'RM' },
+                        'IDR': { factor: 15600, symbol: 'Rp' },
+                        'VND': { factor: 24500, symbol: '₫' },
+                        'UAH': { factor: 38, symbol: '₴' },
+                        'KZT': { factor: 450, symbol: '₸' },
+                        'BYN': { factor: 3.2, symbol: 'Br' },
+                    },
+                },
+                numeral: {
+                    name: 'Системы счисления',
+                    baseUnit: null,
+                    units: {
+                        'двоичная (2)': { base: 2, symbol: '₂' },
+                        'восьмеричная (8)': { base: 8, symbol: '₈' },
+                        'десятеричная (10)': { base: 10, symbol: '₁₀' },
+                        'шестнадцатеричная (16)': { base: 16, symbol: '₁₆' },
+                    },
+                },
             };
 
-            database.ref('messages').push(msg);
-            messageInput.value = '';
-            messageInput.focus();
-        }
+            // ============ DOM ELEMENTS ============
+            const categoryButtons = document.getElementById('categoryButtons');
+            const converterTitle = document.getElementById('converterTitle');
+            const unitFrom = document.getElementById('unitFrom');
+            const unitTo = document.getElementById('unitTo');
+            const inputValue = document.getElementById('inputValue');
+            const resultValue = document.getElementById('resultValue');
+            const resultUnit = document.getElementById('resultUnit');
+            const swapBtn = document.getElementById('swapBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            const numeralInfo = document.getElementById('numeralInfo');
 
-        function saveName() {
-            let newName = nameInput.value.trim();
-            if (!newName) { alert('Имя не может быть пустым.'); return; }
-            if (newName.length > 25) newName = newName.substring(0, 25);
+            let currentCategory = 'length';
 
-            const oldName = currentUserName;
-            currentUserName = newName;
-            localStorage.setItem('globalChatName', currentUserName);
-            currentUserNameDisplay.textContent = currentUserName;
-            nameInput.value = currentUserName;
+            // ============ POPULATE UNIT DROPDOWNS ============
+            function populateUnits(category) {
+                const data = conversionData[category];
+                unitFrom.innerHTML = '';
+                unitTo.innerHTML = '';
+                const unitKeys = Object.keys(data.units);
+                unitKeys.forEach(key => {
+                    const opt1 = document.createElement('option');
+                    opt1.value = key;
+                    opt1.textContent = key;
+                    unitFrom.appendChild(opt1);
 
-            if (oldName !== currentUserName && oldName !== 'Гость') {
-                const renameMsg = {
-                    id: 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7),
-                    sender: 'Система',
-                    text: `${escapeHtml(oldName)} сменил имя на ${escapeHtml(currentUserName)}`,
-                    timestamp: Date.now(),
-                    type: 'system'
-                };
-                database.ref('messages').push(renameMsg);
+                    const opt2 = document.createElement('option');
+                    opt2.value = key;
+                    opt2.textContent = key;
+                    unitTo.appendChild(opt2);
+                });
+                // Set defaults
+                if (unitKeys.length >= 2) {
+                    unitFrom.selectedIndex = 0;
+                    unitTo.selectedIndex = Math.min(1, unitKeys.length - 1);
+                }
             }
-        }
 
-        // ---------- Обработчики ----------
-        sendBtn.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); sendMessage(); }
-        });
-        saveNameBtn.addEventListener('click', saveName);
-        nameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); saveName(); }
-        });
+            // ============ CONVERSION LOGIC ============
+            function convertTemperature(value, fromUnit, toUnit) {
+                // Convert everything to Celsius first
+                let celsius;
+                if (fromUnit === 'Цельсия') celsius = value;
+                else if (fromUnit === 'Фаренгейт') celsius = (value - 32) * 5 / 9;
+                else if (fromUnit === 'Кельвин') celsius = value - 273.15;
+                else return NaN;
 
-        // ---------- Старт ----------
-        currentUserNameDisplay.textContent = currentUserName;
-        nameInput.value = currentUserName === 'Гость' ? '' : currentUserName;
-        initFirebase();
-        messageInput.focus();
-    })();
-</script>
+                if (toUnit === 'Цельсия') return celsius;
+                if (toUnit === 'Фаренгейт') return celsius * 9 / 5 + 32;
+                if (toUnit === 'Кельвин') return celsius + 273.15;
+                return NaN;
+            }
+
+            function convertNumeral(valueStr, fromUnit, toUnit) {
+                const data = conversionData['numeral'];
+                const fromBase = data.units[fromUnit].base;
+                const toBase = data.units[toUnit].base;
+
+                // Parse from source base
+                const parsed = parseInt(valueStr.trim(), fromBase);
+                if (isNaN(parsed)) return null;
+                // Convert to target base
+                return parsed.toString(toBase).toUpperCase();
+            }
+
+            function performConversion() {
+                errorMsg.classList.remove('visible');
+                numeralInfo.style.display = 'none';
+                const rawValue = inputValue.value.trim();
+                const cat = currentCategory;
+                const data = conversionData[cat];
+                const fromU = unitFrom.value;
+                const toU = unitTo.value;
+
+                if (cat === 'numeral') {
+                    // Validate input for numeral systems
+                    const fromBase = data.units[fromU].base;
+                    const validChars = getValidCharsForBase(fromBase);
+                    const regex = new RegExp('^[+-]?[' + validChars + ']+(\.[' + validChars + ']+)?$', 'i');
+                    if (!regex.test(rawValue) && rawValue !== '') {
+                        errorMsg.textContent =
+                            `⚠️ Недопустимые символы для ${fromU}. Разрешены: ${getBaseDescription(fromBase)}`;
+                        errorMsg.classList.add('visible');
+                        resultValue.textContent = '—';
+                        resultUnit.textContent = '';
+                        return;
+                    }
+                    const result = convertNumeral(rawValue || '0', fromU, toU);
+                    if (result === null) {
+                        errorMsg.textContent = '⚠️ Ошибка преобразования. Проверьте ввод.';
+                        errorMsg.classList.add('visible');
+                        resultValue.textContent = '—';
+                        resultUnit.textContent = '';
+                    } else {
+                        resultValue.textContent = result;
+                        resultUnit.textContent = data.units[toU].symbol || '';
+                        numeralInfo.style.display = 'block';
+                        numeralInfo.innerHTML = `
+                            <span>Основание: <code>${data.units[fromU].base}</code> → <code>${data.units[toU].base}</code></span>
+                            &nbsp;|&nbsp;
+                            <span>Десятичный эквивалент: <code>${parseInt(rawValue || '0', data.units[fromU].base)}</code></span>
+                        `;
+                    }
+                    return;
+                }
+
+                if (cat === 'temperature') {
+                    const val = parseFloat(rawValue);
+                    if (isNaN(val)) {
+                        errorMsg.textContent = '⚠️ Введите корректное число.';
+                        errorMsg.classList.add('visible');
+                        resultValue.textContent = '—';
+                        resultUnit.textContent = '';
+                        return;
+                    }
+                    const result = convertTemperature(val, fromU, toU);
+                    if (isNaN(result)) {
+                        errorMsg.textContent = '⚠️ Ошибка преобразования температуры.';
+                        errorMsg.classList.add('visible');
+                        resultValue.textContent = '—';
+                        resultUnit.textContent = '';
+                    } else {
+                        resultValue.textContent = formatNumber(result);
+                        resultUnit.textContent = data.units[toU].symbol || '';
+                    }
+                    return;
+                }
+
+                // Standard factor-based conversion
+                const val = parseFloat(rawValue);
+                if (isNaN(val)) {
+                    errorMsg.textContent = '⚠️ Введите корректное число.';
+                    errorMsg.classList.add('visible');
+                    resultValue.textContent = '—';
+                    resultUnit.textContent = '';
+                    return;
+                }
+                const fromFactor = data.units[fromU].factor;
+                const toFactor = data.units[toU].factor;
+                const valueInBase = val * fromFactor;
+                const result = valueInBase / toFactor;
+                resultValue.textContent = formatNumber(result);
+                resultUnit.textContent = data.units[toU].symbol || '';
+            }
+
+            function getValidCharsForBase(base) {
+                if (base <= 10) return '0-' + (base - 1);
+                const digits = '0-9';
+                const letters = 'a-' + String.fromCharCode(97 + base - 11);
+                return digits + letters;
+            }
+
+            function getBaseDescription(base) {
+                if (base === 2) return '0, 1';
+                if (base === 8) return '0–7';
+                if (base === 10) return '0–9';
+                if (base === 16) return '0–9, A–F';
+                return '0–' + (base - 1);
+            }
+
+            function formatNumber(num) {
+                if (Number.isInteger(num)) return num.toString();
+                // Avoid floating-point artifacts
+                const absNum = Math.abs(num);
+                if (absNum < 1e-15) return '0';
+                if (absNum >= 1e15 || absNum < 0.000001) {
+                    return num.toExponential(10);
+                }
+                // Round to 12 significant digits
+                const rounded = parseFloat(num.toPrecision(12));
+                return rounded.toString();
+            }
+
+            // ============ SWAP ============
+            function swapUnits() {
+                const fromVal = unitFrom.value;
+                const toVal = unitTo.value;
+                unitFrom.value = toVal;
+                unitTo.value = fromVal;
+                performConversion();
+            }
+
+            // ============ CATEGORY SWITCH ============
+            function switchCategory(cat) {
+                currentCategory = cat;
+                converterTitle.textContent = conversionData[cat].name;
+                populateUnits(cat);
+                // Reset input
+                inputValue.value = (cat === 'numeral') ? 'FF' : '1';
+                // Update active button
+                document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                const activeBtn = document.querySelector(`[data-cat="${cat}"]`);
+                if (activeBtn) activeBtn.classList.add('active');
+                // Hide numeral info for non-numeral categories
+                numeralInfo.style.display = 'none';
+                errorMsg.classList.remove('visible');
+                performConversion();
+            }
+
+            // ============ EVENT LISTENERS ============
+            categoryButtons.addEventListener('click', (e) => {
+                const btn = e.target.closest('.cat-btn');
+                if (!btn) return;
+                const cat = btn.dataset.cat;
+                if (cat && cat !== currentCategory) {
+                    switchCategory(cat);
+                }
+            });
+
+            unitFrom.addEventListener('change', performConversion);
+            unitTo.addEventListener('change', performConversion);
+            inputValue.addEventListener('input', performConversion);
+            swapBtn.addEventListener('click', swapUnits);
+
+            // Keyboard shortcut for swap
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 's' && e.ctrlKey && document.activeElement === inputValue) {
+                    e.preventDefault();
+                    swapUnits();
+                }
+            });
+
+            // ============ INITIALIZATION ============
+            switchCategory('length');
+        })();
+    </script>
 </body>
 </html>
