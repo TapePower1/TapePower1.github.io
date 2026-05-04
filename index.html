@@ -2,793 +2,602 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Конвейер величин — Универсальный конвертер</title>
+    <meta name="yandex-verification" content="0fm2lj7jqmho2eev" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=5.0">
+    <title>Unified Service</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f0f4f8;
-            --card-bg: #ffffff;
-            --primary: #3b5998;
-            --primary-hover: #2d4373;
-            --accent: #e8873b;
-            --accent-hover: #c96e2a;
-            --text: #1a1a2e;
-            --text-light: #555;
-            --border: #dde4ed;
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
-            --radius: 14px;
-            --radius-sm: 8px;
-            --transition: 0.2s ease;
-            --input-bg: #f8fafc;
-            --tag-bg: #eef2f9;
-            --tag-text: #3b5998;
+            --bg: #080a0e; --bg2: #0d1017;
+            --surface: rgba(255,255,255,0.035); --surface-hover: rgba(255,255,255,0.065);
+            --border: rgba(255,255,255,0.07); --border-glow: rgba(196,164,92,0.25);
+            --text: #e8e4dc; --text-muted: rgba(232,228,220,0.45);
+            --gold: #c4a45c; --gold2: #e8c97a; --gold-dim: rgba(196,164,92,0.12);
+            --grad: linear-gradient(135deg, #c4a45c 0%, #e8c97a 50%, #c4a45c 100%);
+            --grad-subtle: linear-gradient(135deg, rgba(196,164,92,0.15) 0%, rgba(232,201,122,0.08) 100%);
+            --shadow: 0 32px 80px rgba(0,0,0,0.7); --shadow-sm: 0 8px 32px rgba(0,0,0,0.4);
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        [data-theme="light"] {
+            --bg: #f4f0e8; --bg2: #ede9df;
+            --surface: rgba(0,0,0,0.04); --surface-hover: rgba(0,0,0,0.07);
+            --border: rgba(0,0,0,0.08); --border-glow: rgba(140,100,30,0.2);
+            --text: #1a1610; --text-muted: rgba(26,22,16,0.45);
+            --gold: #8c641e; --gold2: #b8852a; --gold-dim: rgba(140,100,30,0.1);
+            --grad: linear-gradient(135deg, #8c641e 0%, #b8852a 50%, #8c641e 100%);
+            --grad-subtle: linear-gradient(135deg, rgba(140,100,30,0.12) 0%, rgba(184,133,42,0.06) 100%);
+            --shadow: 0 32px 80px rgba(0,0,0,0.12); --shadow-sm: 0 8px 32px rgba(0,0,0,0.08);
         }
-
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #e8edf5 0%, #dce3ef 30%, #f0f4f8 60%, #e4eaf3 100%);
-            background-attachment: fixed;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            color: var(--text);
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 820px;
-            background: var(--card-bg);
-            border-radius: 22px;
-            box-shadow: var(--shadow-lg);
-            padding: 32px 28px 36px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .app-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, #3b5998, #5b7cc5, #e8873b, #f0a665, #3b5998);
-            background-size: 200% 100%;
-            animation: gradientShift 8s ease infinite;
-        }
-
-        @keyframes gradientShift {
-            0%,
-            100% {
-                background-position: 0% 50%;
-            }
-            50% {
-                background-position: 100% 50%;
-            }
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 10px;
-            padding-top: 6px;
-        }
-        .header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #3b5998, #1a1a2e);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.5px;
-        }
-        .header .subtitle {
-            font-size: 0.9rem;
-            color: var(--text-light);
-            margin-top: 2px;
-        }
-
-        /* Category Selector */
-        .category-scroll {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 7px;
-            justify-content: center;
-            margin: 18px 0 22px;
-            padding: 0 4px;
-        }
-        .cat-btn {
-            padding: 9px 16px;
-            border-radius: 22px;
-            border: 1.5px solid var(--border);
-            background: #fff;
-            cursor: pointer;
-            font-size: 0.88rem;
-            font-weight: 500;
-            color: var(--text);
-            transition: all var(--transition);
-            white-space: nowrap;
-            user-select: none;
-            letter-spacing: 0.01em;
-        }
-        .cat-btn:hover {
-            border-color: #bcc7db;
-            background: #f6f8fb;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-        .cat-btn.active {
-            background: var(--primary);
-            color: #fff;
-            border-color: var(--primary);
-            box-shadow: 0 4px 14px rgba(59, 89, 152, 0.3);
-            font-weight: 600;
-            transform: translateY(-1px);
-        }
-        .cat-btn .cat-icon {
-            margin-right: 5px;
-            font-size: 1rem;
-        }
-
-        /* Converter Card */
-        .converter-card {
-            background: #fafbfd;
-            border-radius: var(--radius);
-            padding: 24px 22px 20px;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow);
-        }
-        .converter-title {
-            font-size: 1.05rem;
-            font-weight: 600;
-            color: var(--primary);
-            margin-bottom: 18px;
-            text-align: center;
-            letter-spacing: 0.02em;
-        }
-        .converter-row {
-            display: flex;
-            gap: 14px;
-            align-items: flex-end;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .field-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            min-width: 130px;
-            flex: 1;
-        }
-        .field-group label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--text-light);
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-        .field-group select,
-        .field-group input {
-            padding: 11px 14px;
-            border-radius: var(--radius-sm);
-            border: 1.5px solid var(--border);
-            font-size: 0.95rem;
-            background: var(--input-bg);
-            color: var(--text);
-            transition: all var(--transition);
-            font-family: inherit;
-            width: 100%;
-            min-width: 100px;
-        }
-        .field-group select:focus,
-        .field-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(59, 89, 152, 0.08);
-            background: #fff;
-        }
-        .field-group input {
-            font-size: 1.2rem;
-            font-weight: 500;
-            text-align: center;
-            letter-spacing: 0.02em;
-        }
-        .swap-btn-wrap {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding-bottom: 6px;
-        }
-        .swap-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 1.5px solid var(--border);
-            background: #fff;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: all var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-            flex-shrink: 0;
-        }
-        .swap-btn:hover {
-            background: var(--primary);
-            color: #fff;
-            border-color: var(--primary);
-            transform: rotate(180deg);
-            box-shadow: 0 4px 12px rgba(59, 89, 152, 0.25);
-        }
-
-        /* Result */
-        .result-area {
-            text-align: center;
-            margin-top: 20px;
-            padding: 16px 20px;
-            background: #fff;
-            border-radius: var(--radius-sm);
-            border: 1.5px dashed var(--border);
-            min-height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .result-label {
-            font-size: 0.85rem;
-            color: var(--text-light);
-            font-weight: 500;
-        }
-        .result-value {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--accent);
-            letter-spacing: 0.02em;
-            word-break: break-all;
-        }
-        .result-unit {
-            font-size: 0.95rem;
-            color: var(--text);
-            font-weight: 500;
-        }
-
-        /* Numeral system special */
-        .numeral-info {
-            text-align: center;
-            font-size: 0.8rem;
-            color: var(--text-light);
-            margin-top: 8px;
-        }
-        .numeral-info code {
-            background: #eef2f9;
-            padding: 2px 7px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
-
-        /* Error */
-        .error-msg {
-            color: #d32f2f;
-            text-align: center;
-            font-size: 0.85rem;
-            margin-top: 6px;
-            font-weight: 500;
-            display: none;
-        }
-        .error-msg.visible {
-            display: block;
-        }
-
-        /* Responsive */
-        @media (max-width: 600px) {
-            .app-container {
-                padding: 20px 14px 24px;
-                border-radius: 16px;
-            }
-            .header h1 {
-                font-size: 1.5rem;
-            }
-            .cat-btn {
-                padding: 7px 11px;
-                font-size: 0.78rem;
-                border-radius: 18px;
-            }
-            .converter-row {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 10px;
-            }
-            .swap-btn-wrap {
-                padding: 4px 0;
-            }
-            .swap-btn {
-                width: 34px;
-                height: 34px;
-                font-size: 1rem;
-            }
-            .field-group {
-                min-width: auto;
-            }
-            .result-value {
-                font-size: 1.3rem;
-            }
-        }
+        * { box-sizing: border-box; -webkit-user-select: none; user-select: none; }
+        body { font-family: 'DM Sans', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 28px 20px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; transition: background 0.5s ease, color 0.3s ease; }
+        body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 80% 60% at 20% 10%, rgba(196,164,92,0.055) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 90%, rgba(196,164,92,0.04) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+        [data-theme="light"] body::before { background: radial-gradient(ellipse 80% 60% at 20% 10%, rgba(140,100,30,0.06) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 90%, rgba(140,100,30,0.04) 0%, transparent 50%); }
+        .main-wrapper { max-width: 1140px; width: 100%; flex: 1; position: relative; z-index: 1; }
+        .site-wordmark { text-align: center; padding: 10px 0 30px; letter-spacing: 0.22em; font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 500; color: var(--gold); text-transform: uppercase; opacity: 0.7; }
+        .tab-nav { display: flex; gap: 4px; margin-bottom: 32px; justify-content: center; flex-wrap: wrap; position: sticky; top: 10px; z-index: 20; padding: 10px 16px; border-radius: 18px; background: rgba(8,10,14,0.88); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--border); box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(196,164,92,0.06); }
+        [data-theme="light"] .tab-nav { background: rgba(244,240,232,0.9); }
+        .tab-btn { background: 0; border: 0; color: var(--text-muted); padding: 9px 16px; border-radius: 10px; font-weight: 500; font-size: 0.78rem; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.25s ease; letter-spacing: 0.02em; white-space: nowrap; position: relative; }
+        .tab-btn:hover { color: var(--text); background: var(--surface-hover); }
+        .tab-btn.active { background: var(--gold-dim); color: var(--gold2); border: 1px solid rgba(196,164,92,0.2); font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeUp 0.4s ease; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .glass-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px; box-shadow: var(--shadow); margin-bottom: 24px; width: 100%; position: relative; overflow: hidden; }
+        .glass-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(196,164,92,0.35), transparent); }
+        h1, h2, h3 { margin: 0; font-family: 'Cormorant Garamond', serif; font-weight: 600; letter-spacing: -0.01em; background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        h1 { font-size: 2.8rem; font-style: italic; } h2 { font-size: 2rem; } h3 { font-size: 1.4rem; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 36px; flex-wrap: wrap; gap: 15px; }
+        .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border-glow), transparent); margin: 28px 0; }
+        input, textarea, select { background: rgba(0,0,0,0.25); border: 1px solid var(--border); padding: 14px 18px; border-radius: 12px; color: var(--text); font-size: 1rem; font-family: 'DM Sans', sans-serif; outline: none; transition: all 0.25s; width: 100%; }
+        [data-theme="light"] input, [data-theme="light"] textarea, [data-theme="light"] select { background: rgba(255,255,255,0.7); }
+        input:focus, textarea:focus, select:focus { border-color: rgba(196,164,92,0.5); box-shadow: 0 0 0 3px rgba(196,164,92,0.1); }
+        input::placeholder, textarea::placeholder { color: var(--text-muted); }
+        .btn { width: 100%; padding: 14px 24px; border-radius: 12px; border: 1px solid rgba(196,164,92,0.3); background: var(--grad-subtle); color: var(--gold2); font-weight: 600; font-size: 0.85rem; font-family: 'DM Sans', sans-serif; cursor: pointer; text-transform: uppercase; letter-spacing: 0.1em; transition: all 0.25s ease; margin-top: 16px; position: relative; overflow: hidden; }
+        .btn::after { content: ''; position: absolute; inset: 0; background: var(--grad); opacity: 0; transition: opacity 0.25s; }
+        .btn:hover { border-color: rgba(196,164,92,0.6); box-shadow: 0 8px 24px rgba(196,164,92,0.15), 0 0 0 1px rgba(196,164,92,0.15); transform: translateY(-1px); }
+        .btn:hover::after { opacity: 0.08; } .btn:active { transform: translateY(0); }
+        .theme-btn { background: var(--gold-dim); border: 1px solid rgba(196,164,92,0.2); color: var(--gold); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.78rem; font-family: 'DM Sans', sans-serif; font-weight: 500; letter-spacing: 0.05em; transition: all 0.2s; }
+        .theme-btn:hover { background: rgba(196,164,92,0.2); }
+        .home-hero { text-align: center; padding: 20px 0 16px; }
+        .home-hero h1 { font-size: 4rem; line-height: 1.1; margin-bottom: 14px; }
+        .home-hero p { font-family: 'DM Sans', sans-serif; color: var(--text-muted); font-size: 1rem; font-weight: 300; letter-spacing: 0.03em; margin: 0 0 48px; }
+        .home-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-top: 0; }
+        .home-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 26px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden; }
+        .home-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(196,164,92,0.2), transparent); opacity: 0; transition: opacity 0.3s; }
+        .home-card:hover { border-color: rgba(196,164,92,0.25); background: var(--surface-hover); transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(196,164,92,0.1); }
+        .home-card:hover::before { opacity: 1; }
+        .home-card .icon { font-size: 2rem; margin-bottom: 12px; display: block; filter: saturate(0.7); }
+        .home-card .title { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.05rem; margin-bottom: 6px; color: var(--text); }
+        .home-card .desc { color: var(--text-muted); font-size: 0.78rem; letter-spacing: 0.02em; }
+        .subtab-nav { display: flex; gap: 6px; margin-bottom: 28px; flex-wrap: wrap; }
+        .subtab-btn { background: 0; border: 1px solid var(--border); color: var(--text-muted); padding: 7px 16px; border-radius: 8px; font-size: 0.8rem; font-family: 'DM Sans', sans-serif; font-weight: 500; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+        .subtab-btn:hover { color: var(--text); border-color: rgba(196,164,92,0.2); }
+        .subtab-btn.active { background: var(--gold-dim); border-color: rgba(196,164,92,0.3); color: var(--gold2); }
+        .subtab-content { display: none; } .subtab-content.active { display: block; }
+        .container { display: grid; grid-template-columns: 1fr 320px; gap: 28px; }
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } .tab-search-wrapper { margin-right: 0; margin-bottom: 4px; flex: 1 1 100%; } .tab-search-input { width: 100% !important; } }
+        .input-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        #res-area > div { background: rgba(196,164,92,0.04) !important; border: 1px solid rgba(196,164,92,0.12) !important; border-radius: 14px !important; padding: 18px 22px !important; margin-top: 12px !important; }
+        #h-list > div { padding: 14px 4px !important; border-bottom: 1px solid var(--border) !important; }
+        .passwords-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .passwords-table td { padding: 13px 16px; text-align: center; border: 1px solid var(--border); font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.88rem; color: var(--text); cursor: pointer; transition: background 0.2s; letter-spacing: 0.04em; }
+        .passwords-table td:hover { background: var(--gold-dim); color: var(--gold2); }
+        .passwords-table tr:first-child td:first-child { border-radius: 10px 0 0 0; }
+        .passwords-table tr:last-child td:last-child { border-radius: 0 0 10px 0; }
+        .timestamp { margin-top: 14px; font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0.03em; }
+        .error { color: #e05c5c; font-size: 0.85rem; margin-top: 8px; }
+        .time-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 14px; margin-top: 20px; }
+        .time-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px 18px; text-align: center; transition: all 0.25s; }
+        .time-card:hover { border-color: rgba(196,164,92,0.2); background: var(--surface-hover); }
+        .time-card .city { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.1rem; color: var(--text); margin-bottom: 8px; }
+        .time-card .time { font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--gold); letter-spacing: 0.03em; }
+        .time-card .date { font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; letter-spacing: 0.03em; }
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 16px; }
+        .calc-btn { padding: 18px 8px; font-size: 1.2rem; font-weight: 500; font-family: 'DM Sans', sans-serif; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; color: var(--text); cursor: pointer; transition: all 0.15s; }
+        .calc-btn:hover { background: var(--surface-hover); border-color: rgba(196,164,92,0.2); }
+        .calc-btn:active { transform: scale(0.97); }
+        .calc-btn.op { color: var(--gold); }
+        .calc-btn.eq { background: var(--gold-dim); border-color: rgba(196,164,92,0.3); color: var(--gold2); font-weight: 600; }
+        .calc-btn.eq:hover { background: rgba(196,164,92,0.2); box-shadow: 0 4px 16px rgba(196,164,92,0.15); }
+        #calcResult { margin-top: 16px; font-size: 1.5rem; font-weight: 600; text-align: right; color: var(--gold); font-family: 'Cormorant Garamond', serif; letter-spacing: -0.02em; }
+        .quiz-question { font-size: 1.7rem; text-align: center; margin: 20px 0; font-family: 'Cormorant Garamond', serif; font-style: italic; color: var(--text); }
+        .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .answer-btn { padding: 18px; font-size: 1rem; font-family: 'DM Sans', sans-serif; font-weight: 500; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; cursor: pointer; transition: all 0.2s; text-align: center; color: var(--text); letter-spacing: 0.01em; }
+        .answer-btn:hover { background: var(--gold-dim); border-color: rgba(196,164,92,0.25); color: var(--gold2); }
+        .answer-btn.correct { background: rgba(46,180,100,0.15); border-color: rgba(46,180,100,0.4); color: #4ade80; }
+        .answer-btn.wrong { background: rgba(220,80,80,0.12); border-color: rgba(220,80,80,0.35); color: #f87171; }
+        .quiz-score { font-size: 0.9rem; text-align: center; margin-bottom: 20px; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 500; }
+        .game-status { text-align: center; font-size: 1.2rem; font-family: 'Cormorant Garamond', serif; margin-bottom: 20px; color: var(--gold); }
+        .board { display: grid; grid-template-columns: repeat(3, 100px); gap: 8px; justify-content: center; margin: 20px 0; }
+        .cell { width: 100px; height: 100px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; cursor: pointer; transition: all 0.2s; }
+        .cell:hover { background: var(--gold-dim); border-color: rgba(196,164,92,0.25); }
+        .cell.disabled { pointer-events: none; opacity: 0.65; }
+        .game-board { display: grid; grid-template-columns: repeat(8, 80px); gap: 0; justify-content: center; margin: 20px auto; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.4); }
+        .square { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; }
+        .dark-sq { background: #3d2c1a; } .light-sq { background: #c8a882; }
+        .piece { width: 64px; height: 64px; border-radius: 50%; cursor: pointer; position: relative; transition: transform 0.15s; }
+        .white-piece { background: radial-gradient(circle at 35% 35%, #f0ece4, #c4bfb4); box-shadow: 0 2px 8px rgba(0,0,0,0.5), inset 0 -2px 4px rgba(0,0,0,0.2); border: 1px solid #a8a09a; }
+        .black-piece { background: radial-gradient(circle at 35% 35%, #4a4040, #1a1414); box-shadow: 0 2px 8px rgba(0,0,0,0.7), inset 0 -2px 4px rgba(0,0,0,0.4); border: 1px solid #2a2020; }
+        .king::after { content: '♛'; font-size: 24px; color: var(--gold); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-shadow: 0 0 6px rgba(0,0,0,0.8); }
+        .square.selected-cell { outline: 2px solid var(--gold); outline-offset: -2px; z-index: 2; }
+        .square.highlight-move { box-shadow: inset 0 0 0 3px rgba(100,200,120,0.7); }
+        .square.highlight-capture { box-shadow: inset 0 0 0 3px rgba(220,100,100,0.7); }
+        .checkers-layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+        .checkers-info-col { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 12px; }
+        .checkers-timer { font-size: 1.3rem; font-family: 'Cormorant Garamond', serif; background: var(--surface); padding: 8px 16px; border-radius: 10px; text-align: center; letter-spacing: 0.04em; }
+        .checkers-move-list { background: var(--surface); border-radius: 10px; padding: 8px 12px; max-height: 180px; overflow-y: auto; font-family: monospace; font-size: 0.85em; list-style: decimal inside; }
+        .checkers-move-list li { padding: 2px 0; border-bottom: 1px solid var(--border); }
+        .checkers-game-history { background: var(--surface); border-radius: 10px; padding: 8px 12px; max-height: 160px; overflow-y: auto; font-size: 0.8em; }
+        .game-entry { padding: 4px 0; border-bottom: 1px solid var(--border); opacity: 0.8; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: var(--bg2); padding: 30px; border-radius: 20px; text-align: center; box-shadow: var(--shadow); }
+        .time-options { margin: 15px 0; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+        .quote-text { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-style: italic; font-weight: 300; text-align: center; margin: 28px 0 16px; line-height: 1.45; color: var(--text); }
+        .quote-author { font-size: 0.85rem; text-align: center; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; }
+        .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; align-items: center; gap: 16px; margin-bottom: 12px; transition: all 0.2s; }
+        .result-card:hover { border-color: rgba(196,164,92,0.2); background: var(--surface-hover); }
+        .result-card img { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+        .result-info { flex: 1; }
+        .result-info h4 { margin: 0 0 4px; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; color: var(--text); background: 0; -webkit-text-fill-color: var(--text); }
+        .result-info p { margin: 3px 0; font-size: 0.82rem; color: var(--text-muted); }
+        .play-btn { background: var(--gold-dim); border: 1px solid rgba(196,164,92,0.2); color: var(--gold); border-radius: 50%; width: 44px; height: 44px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+        .play-btn:hover { background: rgba(196,164,92,0.2); box-shadow: 0 4px 16px rgba(196,164,92,0.2); }
+        .password-settings { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; margin-bottom: 8px; }
+        .setting-group { display: flex; flex-direction: column; gap: 10px; }
+        .setting-group label { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--text-muted); cursor: pointer; transition: color 0.2s; }
+        .setting-group label:hover { color: var(--text); }
+        input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; }
+        input[type="radio"] { accent-color: var(--gold); }
+        #translatedText { margin-top: 14px; padding: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; min-height: 64px; font-family: 'DM Sans', sans-serif; font-size: 1rem; color: var(--text); line-height: 1.6; }
+        .random-numbers { font-size: 1.5rem; word-break: break-all; margin: 16px 0; font-family: 'Cormorant Garamond', serif; font-style: italic; color: var(--gold); letter-spacing: 0.04em; }
+        .flex-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .flex-row input[type="number"] { width: 80px; }
+        .radio-group { display: flex; gap: 20px; align-items: center; }
+        .author-tag { position: fixed; bottom: 24px; right: 24px; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 0.72rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gold); opacity: 0.5; z-index: 10; transition: opacity 0.2s; }
+        .author-tag:hover { opacity: 0.9; }
+        .online-counter { position: fixed; bottom: 24px; left: 24px; background: var(--surface); backdrop-filter: blur(12px); border-radius: 100px; padding: 7px 16px; font-size: 0.78rem; font-family: 'DM Sans', sans-serif; color: var(--text-muted); border: 1px solid var(--border); z-index: 10; display: flex; align-items: center; gap: 8px; letter-spacing: 0.03em; }
+        .online-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; animation: pulse-dot 2s ease infinite; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+        .contact-email { text-align: center; margin-top: 48px; margin-bottom: 80px; font-size: 0.82rem; color: var(--text-muted); cursor: pointer; letter-spacing: 0.05em; transition: color 0.2s; }
+        .contact-email:hover { color: var(--gold); }
+        .contact-email a { color: var(--gold); text-decoration: none; }
+        #supportForm input, #supportForm textarea { margin-bottom: 12px; }
+        #tab-donate .glass-card p { color: var(--text-muted); font-size: 0.95rem; text-align: center; }
+        #tab-donate .flex-row button { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-style: italic; }
+        .ocr-upload-zone { border: 2px dashed var(--border); border-radius: 20px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: var(--surface); position: relative; overflow: hidden; }
+        .ocr-upload-zone:hover, .ocr-upload-zone.drag-over { border-color: var(--gold); background: var(--surface-hover); }
+        .ocr-upload-zone p { margin: 10px 0; color: var(--text-muted); font-size: 0.9rem; }
+        #ocrResult { margin-top: 20px; padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+        .supported-format-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 10px; }
+        .format-tag { background: var(--gold-dim); color: var(--gold); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; text-align: center; }
     </style>
 </head>
 <body>
+    <div class="main-wrapper">
+        <div class="site-wordmark">⚡ UNIFIED SERVICE</div>
+        <nav class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('tab-home')">🏠 Home</button>
+            <button class="tab-btn" onclick="switchTab('tab-calc')">🧮 Calculator</button>
+            <button class="tab-btn" onclick="switchTab('tab-convert')">🔄 Convert</button>
+            <button class="tab-btn" onclick="switchTab('tab-time')">🌍 Time</button>
+            <button class="tab-btn" onclick="switchTab('tab-games')">🎮 Games</button>
+            <button class="tab-btn" onclick="switchTab('tab-quiz')">❓ Quiz</button>
+            <button class="tab-btn" onclick="switchTab('tab-text')">📝 Text</button>
+            <button class="tab-btn" onclick="switchTab('tab-media')">🎵 Media</button>
+            <button class="tab-btn" onclick="switchTab('tab-ocr')">📸 OCR</button>
+            <button class="tab-btn" onclick="switchTab('tab-about')">ℹ️ About</button>
+            <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+        </nav>
 
-    <div class="app-container">
-        <!-- Header -->
-        <div class="header">
-            <h1>🔄 Конвейер величин</h1>
-            <p class="subtitle">Универсальный конвертер единиц измерения</p>
+        <div id="tab-home" class="tab-content active">
+            <div class="home-hero">
+                <h1>Welcome</h1>
+                <p>Your comprehensive service hub for daily tasks</p>
+            </div>
+            <div class="home-grid" id="homeGrid"></div>
         </div>
 
-        <!-- Category Buttons -->
-        <div class="category-scroll" id="categoryButtons">
-            <button class="cat-btn active" data-cat="length"><span class="cat-icon">📏</span>Длина</button>
-            <button class="cat-btn" data-cat="weight"><span class="cat-icon">⚖️</span>Вес</button>
-            <button class="cat-btn" data-cat="area"><span class="cat-icon">📐</span>Площадь</button>
-            <button class="cat-btn" data-cat="volume"><span class="cat-icon">🧪</span>Объём</button>
-            <button class="cat-btn" data-cat="speed"><span class="cat-icon">🚀</span>Скорость</button>
-            <button class="cat-btn" data-cat="temperature"><span class="cat-icon">🌡️</span>Температура</button>
-            <button class="cat-btn" data-cat="energy"><span class="cat-icon">⚡</span>Энергия</button>
-            <button class="cat-btn" data-cat="time"><span class="cat-icon">⏱️</span>Время</button>
-            <button class="cat-btn" data-cat="data"><span class="cat-icon">💾</span>Данные</button>
-            <button class="cat-btn" data-cat="angle"><span class="cat-icon">📐</span>Угол</button>
-            <button class="cat-btn" data-cat="currency"><span class="cat-icon">💱</span>Валюта</button>
-            <button class="cat-btn" data-cat="numeral"><span class="cat-icon">🔢</span>Системы</button>
+        <div id="tab-calc" class="tab-content">
+            <div class="glass-card">
+                <h2>Calculator</h2>
+                <input type="text" id="calcDisplay" readonly style="font-size: 1.8rem; text-align: right; margin-bottom: 12px;">
+                <div class="calc-grid" id="calcGrid"></div>
+                <div id="calcResult"></div>
+            </div>
         </div>
 
-        <!-- Converter Card -->
-        <div class="converter-card" id="converterCard">
-            <div class="converter-title" id="converterTitle">Длина</div>
-            <div class="converter-row">
-                <div class="field-group">
-                    <label for="unitFrom">Из</label>
-                    <select id="unitFrom"></select>
+        <div id="tab-convert" class="tab-content">
+            <div class="glass-card">
+                <h2>Converter</h2>
+                <div class="subtab-nav" id="convertSubtabs"></div>
+                <div id="convert-temperature" class="subtab-content active">
+                    <input type="number" placeholder="Celsius" id="celsius">
+                    <button class="btn" onclick="convertTemp()">Convert Temperature</button>
                 </div>
-                <div class="swap-btn-wrap">
-                    <button class="swap-btn" id="swapBtn" title="Поменять местами">⇄</button>
+                <div id="convert-weight" class="subtab-content">
+                    <input type="number" placeholder="Kilograms" id="kg">
+                    <button class="btn" onclick="convertWeight()">Convert Weight</button>
                 </div>
-                <div class="field-group">
-                    <label for="unitTo">В</label>
-                    <select id="unitTo"></select>
-                </div>
-            </div>
-            <div class="converter-row" style="margin-top:14px;">
-                <div class="field-group" style="flex:2;">
-                    <label for="inputValue">Значение</label>
-                    <input type="text" id="inputValue" placeholder="Введите число" value="1">
+                <div id="convert-length" class="subtab-content">
+                    <input type="number" placeholder="Meters" id="meters">
+                    <button class="btn" onclick="convertLength()">Convert Length</button>
                 </div>
             </div>
-            <div class="result-area" id="resultArea">
-                <span class="result-label">Результат:</span>
-                <span class="result-value" id="resultValue">—</span>
-                <span class="result-unit" id="resultUnit"></span>
+        </div>
+
+        <div id="tab-time" class="tab-content">
+            <div class="glass-card">
+                <h2>World Time</h2>
+                <div class="time-grid" id="timeGrid"></div>
             </div>
-            <div class="error-msg" id="errorMsg"></div>
-            <div class="numeral-info" id="numeralInfo" style="display:none;"></div>
+        </div>
+
+        <div id="tab-games" class="tab-content">
+            <div class="glass-card">
+                <h2>Games</h2>
+                <div class="subtab-nav">
+                    <button class="subtab-btn active" onclick="switchSubtab('game-tictac')">Tic Tac Toe</button>
+                    <button class="subtab-btn" onclick="switchSubtab('game-checkers')">Checkers</button>
+                </div>
+                <div id="game-tictac" class="subtab-content active">
+                    <div class="game-status" id="gameStatus">X's Turn</div>
+                    <div class="board" id="board"></div>
+                    <button class="btn" onclick="resetGame()">New Game</button>
+                </div>
+                <div id="game-checkers" class="subtab-content">
+                    <div class="checkers-layout">
+                        <div class="game-board" id="checkersBoard"></div>
+                        <div class="checkers-info-col">
+                            <div class="checkers-timer" id="checkersTimer">White</div>
+                            <ol class="checkers-move-list" id="checkersMoves"></ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-quiz" class="tab-content">
+            <div class="glass-card">
+                <h2>Geography Quiz</h2>
+                <div class="quiz-score" id="quizScore"></div>
+                <div class="quiz-question" id="quizQuestion"></div>
+                <div class="answers" id="quizAnswers"></div>
+            </div>
+        </div>
+
+        <div id="tab-text" class="tab-content">
+            <div class="glass-card">
+                <h2>Text Tools</h2>
+                <textarea placeholder="Enter text..." id="textInput" style="min-height: 120px;"></textarea>
+                <button class="btn" onclick="countText()">Count Characters</button>
+                <div id="textStats"></div>
+            </div>
+        </div>
+
+        <div id="tab-media" class="tab-content">
+            <div class="glass-card">
+                <h2>Media</h2>
+                <div class="subtab-nav">
+                    <button class="subtab-btn active" onclick="switchSubtab('media-quote')">Quotes</button>
+                </div>
+                <div id="media-quote" class="subtab-content active">
+                    <div class="quote-text" id="quoteText"></div>
+                    <div class="quote-author" id="quoteAuthor"></div>
+                    <button class="btn" onclick="getRandomQuote()">New Quote</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-ocr" class="tab-content">
+            <div class="glass-card">
+                <h2>Optical Character Recognition</h2>
+                <div class="ocr-upload-zone" onclick="document.getElementById('ocrInput').click()">
+                    <p>📤 Drop image or click to upload</p>
+                    <p style="font-size: 0.75rem;">Supported: JPG, PNG, WebP, TIFF</p>
+                    <input type="file" id="ocrInput" accept="image/*" style="display: none;" onchange="handleOCR(event)">
+                </div>
+                <div id="ocrResult"></div>
+            </div>
+        </div>
+
+        <div id="tab-about" class="tab-content">
+            <div class="glass-card">
+                <h2>About</h2>
+                <p>This is a unified service providing various tools and utilities. All services are free and run entirely in your browser.</p>
+                <div class="contact-email"><a href="mailto:hello@example.com">💌 Contact Us</a></div>
+            </div>
         </div>
     </div>
 
+    <div class="online-counter"><span class="online-dot"></span><span id="onlineCount">Loading...</span></div>
+    <div class="author-tag">TapePower</div>
+
     <script>
-        (function() {
-            // ============ CONVERSION DATA ============
-            const conversionData = {
-                length: {
-                    name: 'Длина',
-                    baseUnit: 'метр',
-                    units: {
-                        'миллиметр': { factor: 0.001, symbol: 'мм' },
-                        'сантиметр': { factor: 0.01, symbol: 'см' },
-                        'дециметр': { factor: 0.1, symbol: 'дм' },
-                        'метр': { factor: 1, symbol: 'м' },
-                        'километр': { factor: 1000, symbol: 'км' },
-                        'дюйм': { factor: 0.0254, symbol: 'in' },
-                        'фут': { factor: 0.3048, symbol: 'ft' },
-                        'миля': { factor: 1609.344, symbol: 'mi' },
-                    },
-                },
-                weight: {
-                    name: 'Вес / Масса',
-                    baseUnit: 'грамм',
-                    units: {
-                        'миллиграмм': { factor: 0.001, symbol: 'мг' },
-                        'грамм': { factor: 1, symbol: 'г' },
-                        'килограмм': { factor: 1000, symbol: 'кг' },
-                        'унция': { factor: 28.349523125, symbol: 'oz' },
-                        'фунт': { factor: 453.59237, symbol: 'lb' },
-                        'центнер': { factor: 100000, symbol: 'ц' },
-                        'тонна': { factor: 1000000, symbol: 'т' },
-                    },
-                },
-                area: {
-                    name: 'Площадь',
-                    baseUnit: 'кв. метр',
-                    units: {
-                        'кв. миллиметр': { factor: 0.000001, symbol: 'мм²' },
-                        'кв. сантиметр': { factor: 0.0001, symbol: 'см²' },
-                        'кв. дециметр': { factor: 0.01, symbol: 'дм²' },
-                        'кв. метр': { factor: 1, symbol: 'м²' },
-                        'ар': { factor: 100, symbol: 'а' },
-                        'гектар': { factor: 10000, symbol: 'га' },
-                        'кв. километр': { factor: 1000000, symbol: 'км²' },
-                        'акр': { factor: 4046.8564224, symbol: 'ac' },
-                        'кв. дюйм': { factor: 0.00064516, symbol: 'in²' },
-                        'кв. фут': { factor: 0.09290304, symbol: 'ft²' },
-                        'кв. миля': { factor: 2589988.110336, symbol: 'mi²' },
-                    },
-                },
-                volume: {
-                    name: 'Объём',
-                    baseUnit: 'куб. метр',
-                    units: {
-                        'куб. сантиметр': { factor: 0.000001, symbol: 'см³' },
-                        'куб. дециметр': { factor: 0.001, symbol: 'дм³' },
-                        'куб. метр': { factor: 1, symbol: 'м³' },
-                        'куб. километр': { factor: 1e9, symbol: 'км³' },
-                        'чайная ложка': { factor: 4.92892159375e-6, symbol: 'ч.л.' },
-                        'столовая ложка': { factor: 1.478676478125e-5, symbol: 'ст.л.' },
-                        'чашка': { factor: 0.0002365882365, symbol: 'cup' },
-                        'галлон': { factor: 0.003785411784, symbol: 'gal' },
-                    },
-                },
-                speed: {
-                    name: 'Скорость',
-                    baseUnit: 'метр/сек',
-                    units: {
-                        'метр/сек': { factor: 1, symbol: 'м/с' },
-                        'км/час': { factor: 0.27777777778, symbol: 'км/ч' },
-                        'миля/час': { factor: 0.44704, symbol: 'mph' },
-                        'узел': { factor: 0.51444444444, symbol: 'уз' },
-                    },
-                },
-                temperature: {
-                    name: 'Температура',
-                    baseUnit: null,
-                    units: {
-                        'Цельсия': { symbol: '°C' },
-                        'Фаренгейт': { symbol: '°F' },
-                        'Кельвин': { symbol: 'K' },
-                    },
-                },
-                energy: {
-                    name: 'Энергия',
-                    baseUnit: 'джоуль',
-                    units: {
-                        'джоуль': { factor: 1, symbol: 'Дж' },
-                        'калория': { factor: 4.184, symbol: 'кал' },
-                        'килокалория': { factor: 4184, symbol: 'ккал' },
-                        'килоджоуль': { factor: 1000, symbol: 'кДж' },
-                        'киловатт-час': { factor: 3600000, symbol: 'кВт·ч' },
-                        'ньютон-метр': { factor: 1, symbol: 'Н·м' },
-                    },
-                },
-                time: {
-                    name: 'Время',
-                    baseUnit: 'секунда',
-                    units: {
-                        'миллисекунда': { factor: 0.001, symbol: 'мс' },
-                        'секунда': { factor: 1, symbol: 'с' },
-                        'минута': { factor: 60, symbol: 'мин' },
-                        'час': { factor: 3600, symbol: 'ч' },
-                        'день': { factor: 86400, symbol: 'дн' },
-                        'неделя': { factor: 604800, symbol: 'нед' },
-                        'год': { factor: 31536000, symbol: 'г' },
-                    },
-                },
-                data: {
-                    name: 'Данные',
-                    baseUnit: 'байт',
-                    units: {
-                        'бит': { factor: 0.125, symbol: 'бит' },
-                        'байт': { factor: 1, symbol: 'Б' },
-                        'килобайт': { factor: 1024, symbol: 'КБ' },
-                        'мегабайт': { factor: 1048576, symbol: 'МБ' },
-                        'гигабайт': { factor: 1073741824, symbol: 'ГБ' },
-                        'терабайт': { factor: 1099511627776, symbol: 'ТБ' },
-                        'петабайт': { factor: 1125899906842624, symbol: 'ПБ' },
-                    },
-                },
-                angle: {
-                    name: 'Угол',
-                    baseUnit: 'радиан',
-                    units: {
-                        'градус': { factor: Math.PI / 180, symbol: '°' },
-                        'радиан': { factor: 1, symbol: 'рад' },
-                    },
-                },
-currency: {
-    name: 'Валюта',
-    baseUnit: 'USD',
-    units: {
-        'USD': { factor: 1, symbol: '$' },
-        'EUR': { factor: 1 / 0.92, symbol: '€' },      // стало ≈ 1.087
-        'RUB': { factor: 1 / 92, symbol: '₽' },        // стало ≈ 0.01087
-        'GBP': { factor: 1 / 0.79, symbol: '£' },
-        'JPY': { factor: 1 / 150, symbol: '¥' },
-        'CNY': { factor: 1 / 7.24, symbol: '¥' },
-        'INR': { factor: 1 / 83, symbol: '₹' },
-        'AUD': { factor: 1 / 1.53, symbol: 'A$' },
-        'CAD': { factor: 1 / 1.36, symbol: 'C$' },
-        'CHF': { factor: 1 / 0.89, symbol: 'Fr' },
-        'BRL': { factor: 1 / 5.05, symbol: 'R$' },
-        'KRW': { factor: 1 / 1325, symbol: '₩' },
-        'MXN': { factor: 1 / 16.8, symbol: 'MX$' },
-        'TRY': { factor: 1 / 30.5, symbol: '₺' },
-        'SEK': { factor: 1 / 10.4, symbol: 'kr' },
-        'NOK': { factor: 1 / 10.6, symbol: 'kr' },
-        'DKK': { factor: 1 / 6.9, symbol: 'kr' },
-        'PLN': { factor: 1 / 4.0, symbol: 'zł' },
-        'CZK': { factor: 1 / 22.7, symbol: 'Kč' },
-        'HUF': { factor: 1 / 355, symbol: 'Ft' },
-        'THB': { factor: 1 / 35.5, symbol: '฿' },
-        'SGD': { factor: 1 / 1.34, symbol: 'S$' },
-        'HKD': { factor: 1 / 7.82, symbol: 'HK$' },
-        'NZD': { factor: 1 / 1.63, symbol: 'NZ$' },
-        'ZAR': { factor: 1 / 18.6, symbol: 'R' },
-        'AED': { factor: 1 / 3.67, symbol: 'د.إ' },
-        'SAR': { factor: 1 / 3.75, symbol: '﷼' },
-        'ARS': { factor: 1 / 850, symbol: 'AR$' },
-        'EGP': { factor: 1 / 47, symbol: 'E£' },
-        'PHP': { factor: 1 / 56, symbol: '₱' },
-        'MYR': { factor: 1 / 4.65, symbol: 'RM' },
-        'IDR': { factor: 1 / 15600, symbol: 'Rp' },
-        'VND': { factor: 1 / 24500, symbol: '₫' },
-        'UAH': { factor: 1 / 38, symbol: '₴' },
-        'KZT': { factor: 1 / 450, symbol: '₸' },
-        'BYN': { factor: 1 / 3.2, symbol: 'Br' },
-    },
-},
-                numeral: {
-                    name: 'Системы счисления',
-                    baseUnit: null,
-                    units: {
-                        'двоичная (2)': { base: 2, symbol: '₂' },
-                        'восьмеричная (8)': { base: 8, symbol: '₈' },
-                        'десятеричная (10)': { base: 10, symbol: '₁₀' },
-                        'шестнадцатеричная (16)': { base: 16, symbol: '₁₆' },
-                    },
-                },
-            };
+        const quizData = [
+            {q: "What is the capital of France?", a: ["Paris", "London", "Berlin", "Madrid"], c: 0},
+            {q: "Which country is the largest by area?", a: ["Canada", "Russia", "USA", "China"], c: 1},
+            {q: "What is the capital of Japan?", a: ["Seoul", "Bangkok", "Tokyo", "Beijing"], c: 2},
+            {q: "Which is the longest river?", a: ["Nile", "Amazon", "Yangtze", "Mississippi"], c: 0},
+            {q: "What is the capital of Australia?", a: ["Sydney", "Melbourne", "Canberra", "Brisbane"], c: 2},
+            {q: "Which ocean is the largest?", a: ["Atlantic", "Indian", "Arctic", "Pacific"], c: 3},
+            {q: "What is the capital of Brazil?", a: ["Rio", "São Paulo", "Brasília", "Salvador"], c: 2},
+            {q: "Which mountain is the highest?", a: ["K2", "Denali", "Everest", "Aconcagua"], c: 2}
+        ];
 
-            // ============ DOM ELEMENTS ============
-            const categoryButtons = document.getElementById('categoryButtons');
-            const converterTitle = document.getElementById('converterTitle');
-            const unitFrom = document.getElementById('unitFrom');
-            const unitTo = document.getElementById('unitTo');
-            const inputValue = document.getElementById('inputValue');
-            const resultValue = document.getElementById('resultValue');
-            const resultUnit = document.getElementById('resultUnit');
-            const swapBtn = document.getElementById('swapBtn');
-            const errorMsg = document.getElementById('errorMsg');
-            const numeralInfo = document.getElementById('numeralInfo');
+        const cities = [
+            {name: "New York", tz: -5}, {name: "London", tz: 0}, {name: "Paris", tz: 1},
+            {name: "Tokyo", tz: 9}, {name: "Sydney", tz: 10}, {name: "Dubai", tz: 4},
+            {name: "Singapore", tz: 8}, {name: "Hong Kong", tz: 8}, {name: "Bangkok", tz: 7},
+            {name: "Moscow", tz: 3}, {name: "Istanbul", tz: 3}, {name: "Mumbai", tz: 5.5}
+        ];
 
-            let currentCategory = 'length';
+        const quotes = [
+            {text: "The only way to do great work is to love what you do.", author: "Steve Jobs"},
+            {text: "Life is 10% what happens to you and 90% how you react to it.", author: "Charles R. Swindoll"},
+            {text: "Innovation distinguishes between a leader and a follower.", author: "Steve Jobs"},
+            {text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt"}
+        ];
 
-            // ============ POPULATE UNIT DROPDOWNS ============
-            function populateUnits(category) {
-                const data = conversionData[category];
-                unitFrom.innerHTML = '';
-                unitTo.innerHTML = '';
-                const unitKeys = Object.keys(data.units);
-                unitKeys.forEach(key => {
-                    const opt1 = document.createElement('option');
-                    opt1.value = key;
-                    opt1.textContent = key;
-                    unitFrom.appendChild(opt1);
+        const homeItems = [
+            {icon: "🧮", title: "Calculator", desc: "Fast math calculations"},
+            {icon: "🔄", title: "Converter", desc: "Unit conversion"},
+            {icon: "🌍", title: "Time", desc: "World time zones"},
+            {icon: "🎮", title: "Games", desc: "Play games"},
+            {icon: "❓", title: "Quiz", desc: "Geography quiz"},
+            {icon: "📝", title: "Text", desc: "Text tools"}
+        ];
 
-                    const opt2 = document.createElement('option');
-                    opt2.value = key;
-                    opt2.textContent = key;
-                    unitTo.appendChild(opt2);
-                });
-                // Set defaults
-                if (unitKeys.length >= 2) {
-                    unitFrom.selectedIndex = 0;
-                    unitTo.selectedIndex = Math.min(1, unitKeys.length - 1);
-                }
-            }
+        let currentQuizQ = 0, quizScore = 0;
+        let calcDisplay = "";
+        let boardState = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameActive = true;
 
-            // ============ CONVERSION LOGIC ============
-            function convertTemperature(value, fromUnit, toUnit) {
-                // Convert everything to Celsius first
-                let celsius;
-                if (fromUnit === 'Цельсия') celsius = value;
-                else if (fromUnit === 'Фаренгейт') celsius = (value - 32) * 5 / 9;
-                else if (fromUnit === 'Кельвин') celsius = value - 273.15;
-                else return NaN;
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
 
-                if (toUnit === 'Цельсия') return celsius;
-                if (toUnit === 'Фаренгейт') return celsius * 9 / 5 + 32;
-                if (toUnit === 'Кельвин') return celsius + 273.15;
-                return NaN;
-            }
+        function switchSubtab(sub) {
+            const parent = event.target.parentElement.nextElementSibling;
+            parent.parentElement.querySelectorAll('.subtab-content').forEach(s => s.classList.remove('active'));
+            document.getElementById(sub).classList.add('active');
+            event.target.parentElement.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
 
-            function convertNumeral(valueStr, fromUnit, toUnit) {
-                const data = conversionData['numeral'];
-                const fromBase = data.units[fromUnit].base;
-                const toBase = data.units[toUnit].base;
+        function toggleTheme() {
+            const theme = document.documentElement.getAttribute('data-theme');
+            document.documentElement.setAttribute('data-theme', theme === 'light' ? 'dark' : 'light');
+            localStorage.setItem('theme', theme === 'light' ? 'dark' : 'light');
+        }
 
-                // Parse from source base
-                const parsed = parseInt(valueStr.trim(), fromBase);
-                if (isNaN(parsed)) return null;
-                // Convert to target base
-                return parsed.toString(toBase).toUpperCase();
-            }
-
-            function performConversion() {
-                errorMsg.classList.remove('visible');
-                numeralInfo.style.display = 'none';
-                const rawValue = inputValue.value.trim();
-                const cat = currentCategory;
-                const data = conversionData[cat];
-                const fromU = unitFrom.value;
-                const toU = unitTo.value;
-
-                if (cat === 'numeral') {
-                    // Validate input for numeral systems
-                    const fromBase = data.units[fromU].base;
-                    const validChars = getValidCharsForBase(fromBase);
-                    const regex = new RegExp('^[+-]?[' + validChars + ']+(\.[' + validChars + ']+)?$', 'i');
-                    if (!regex.test(rawValue) && rawValue !== '') {
-                        errorMsg.textContent =
-                            `⚠️ Недопустимые символы для ${fromU}. Разрешены: ${getBaseDescription(fromBase)}`;
-                        errorMsg.classList.add('visible');
-                        resultValue.textContent = '—';
-                        resultUnit.textContent = '';
-                        return;
-                    }
-                    const result = convertNumeral(rawValue || '0', fromU, toU);
-                    if (result === null) {
-                        errorMsg.textContent = '⚠️ Ошибка преобразования. Проверьте ввод.';
-                        errorMsg.classList.add('visible');
-                        resultValue.textContent = '—';
-                        resultUnit.textContent = '';
-                    } else {
-                        resultValue.textContent = result;
-                        resultUnit.textContent = data.units[toU].symbol || '';
-                        numeralInfo.style.display = 'block';
-                        numeralInfo.innerHTML = `
-                            <span>Основание: <code>${data.units[fromU].base}</code> → <code>${data.units[toU].base}</code></span>
-                            &nbsp;|&nbsp;
-                            <span>Десятичный эквивалент: <code>${parseInt(rawValue || '0', data.units[fromU].base)}</code></span>
-                        `;
-                    }
-                    return;
-                }
-
-                if (cat === 'temperature') {
-                    const val = parseFloat(rawValue);
-                    if (isNaN(val)) {
-                        errorMsg.textContent = '⚠️ Введите корректное число.';
-                        errorMsg.classList.add('visible');
-                        resultValue.textContent = '—';
-                        resultUnit.textContent = '';
-                        return;
-                    }
-                    const result = convertTemperature(val, fromU, toU);
-                    if (isNaN(result)) {
-                        errorMsg.textContent = '⚠️ Ошибка преобразования температуры.';
-                        errorMsg.classList.add('visible');
-                        resultValue.textContent = '—';
-                        resultUnit.textContent = '';
-                    } else {
-                        resultValue.textContent = formatNumber(result);
-                        resultUnit.textContent = data.units[toU].symbol || '';
-                    }
-                    return;
-                }
-
-                // Standard factor-based conversion
-                const val = parseFloat(rawValue);
-                if (isNaN(val)) {
-                    errorMsg.textContent = '⚠️ Введите корректное число.';
-                    errorMsg.classList.add('visible');
-                    resultValue.textContent = '—';
-                    resultUnit.textContent = '';
-                    return;
-                }
-                const fromFactor = data.units[fromU].factor;
-                const toFactor = data.units[toU].factor;
-                const valueInBase = val * fromFactor;
-                const result = valueInBase / toFactor;
-                resultValue.textContent = formatNumber(result);
-                resultUnit.textContent = data.units[toU].symbol || '';
-            }
-
-            function getValidCharsForBase(base) {
-                if (base <= 10) return '0-' + (base - 1);
-                const digits = '0-9';
-                const letters = 'a-' + String.fromCharCode(97 + base - 11);
-                return digits + letters;
-            }
-
-            function getBaseDescription(base) {
-                if (base === 2) return '0, 1';
-                if (base === 8) return '0–7';
-                if (base === 10) return '0–9';
-                if (base === 16) return '0–9, A–F';
-                return '0–' + (base - 1);
-            }
-
-            function formatNumber(num) {
-                if (Number.isInteger(num)) return num.toString();
-                // Avoid floating-point artifacts
-                const absNum = Math.abs(num);
-                if (absNum < 1e-15) return '0';
-                if (absNum >= 1e15 || absNum < 0.000001) {
-                    return num.toExponential(10);
-                }
-                // Round to 12 significant digits
-                const rounded = parseFloat(num.toPrecision(12));
-                return rounded.toString();
-            }
-
-            // ============ SWAP ============
-            function swapUnits() {
-                const fromVal = unitFrom.value;
-                const toVal = unitTo.value;
-                unitFrom.value = toVal;
-                unitTo.value = fromVal;
-                performConversion();
-            }
-
-            // ============ CATEGORY SWITCH ============
-            function switchCategory(cat) {
-                currentCategory = cat;
-                converterTitle.textContent = conversionData[cat].name;
-                populateUnits(cat);
-                // Reset input
-                inputValue.value = (cat === 'numeral') ? 'FF' : '1';
-                // Update active button
-                document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-                const activeBtn = document.querySelector(`[data-cat="${cat}"]`);
-                if (activeBtn) activeBtn.classList.add('active');
-                // Hide numeral info for non-numeral categories
-                numeralInfo.style.display = 'none';
-                errorMsg.classList.remove('visible');
-                performConversion();
-            }
-
-            // ============ EVENT LISTENERS ============
-            categoryButtons.addEventListener('click', (e) => {
-                const btn = e.target.closest('.cat-btn');
-                if (!btn) return;
-                const cat = btn.dataset.cat;
-                if (cat && cat !== currentCategory) {
-                    switchCategory(cat);
-                }
+        function initHome() {
+            const grid = document.getElementById('homeGrid');
+            homeItems.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'home-card';
+                card.innerHTML = `<span class="icon">${item.icon}</span><div class="title">${item.title}</div><div class="desc">${item.desc}</div>`;
+                grid.appendChild(card);
             });
+        }
 
-            unitFrom.addEventListener('change', performConversion);
-            unitTo.addEventListener('change', performConversion);
-            inputValue.addEventListener('input', performConversion);
-            swapBtn.addEventListener('click', swapUnits);
+        function initCalc() {
+            const chars = '123456789.0+-*/C=';
+            const grid = document.getElementById('calcGrid');
+            for (let i = 0; i < chars.length; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'calc-btn';
+                if ('+-*/'.includes(chars[i])) btn.classList.add('op');
+                if (chars[i] === '=' || chars[i] === 'C') btn.classList.add('eq');
+                btn.textContent = chars[i];
+                btn.onclick = () => handleCalc(chars[i]);
+                grid.appendChild(btn);
+            }
+        }
 
-            // Keyboard shortcut for swap
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 's' && e.ctrlKey && document.activeElement === inputValue) {
-                    e.preventDefault();
-                    swapUnits();
+        function handleCalc(char) {
+            const display = document.getElementById('calcDisplay');
+            if (char === 'C') {
+                calcDisplay = '';
+                display.value = '';
+            } else if (char === '=') {
+                try {
+                    calcDisplay = eval(calcDisplay).toString();
+                    display.value = calcDisplay;
+                } catch {
+                    display.value = 'Error';
                 }
-            });
+            } else {
+                calcDisplay += char;
+                display.value = calcDisplay;
+            }
+        }
 
-            // ============ INITIALIZATION ============
-            switchCategory('length');
-        })();
+        function initTime() {
+            const grid = document.getElementById('timeGrid');
+            cities.forEach(city => {
+                const card = document.createElement('div');
+                card.className = 'time-card';
+                const date = new Date();
+                const offset = city.tz * 60 * 60 * 1000;
+                const localTime = new Date(date.getTime() + (offset - date.getTimezoneOffset() * 60 * 1000));
+                card.innerHTML = `
+                    <div class="city">${city.name}</div>
+                    <div class="time">${localTime.toLocaleTimeString()}</div>
+                    <div class="date">${localTime.toLocaleDateString()}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function initTicTac() {
+            const board = document.getElementById('board');
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.onclick = () => playTicTac(i);
+                board.appendChild(cell);
+            }
+        }
+
+        function playTicTac(idx) {
+            if (!gameActive || boardState[idx]) return;
+            boardState[idx] = currentPlayer;
+            const cells = document.querySelectorAll('#board .cell');
+            cells[idx].textContent = currentPlayer;
+            const win = checkWin();
+            if (win) {
+                document.getElementById('gameStatus').textContent = currentPlayer + ' Wins!';
+                gameActive = false;
+            } else if (boardState.every(x => x)) {
+                document.getElementById('gameStatus').textContent = 'Draw!';
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                document.getElementById('gameStatus').textContent = currentPlayer + "'s Turn";
+            }
+        }
+
+        function checkWin() {
+            const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            return lines.some(([a,b,c]) => boardState[a] && boardState[a] === boardState[b] && boardState[a] === boardState[c]);
+        }
+
+        function resetGame() {
+            boardState = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            document.getElementById('gameStatus').textContent = "X's Turn";
+            document.querySelectorAll('#board .cell').forEach(c => c.textContent = '');
+        }
+
+        function initQuiz() {
+            showQuizQuestion();
+        }
+
+        function showQuizQuestion() {
+            const q = quizData[currentQuizQ];
+            document.getElementById('quizQuestion').textContent = q.q;
+            const answers = document.getElementById('quizAnswers');
+            answers.innerHTML = '';
+            q.a.forEach((ans, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = ans;
+                btn.onclick = () => checkAnswer(i);
+                answers.appendChild(btn);
+            });
+            document.getElementById('quizScore').textContent = `Score: ${quizScore}/${quizData.length}`;
+        }
+
+        function checkAnswer(idx) {
+            const correct = quizData[currentQuizQ].c === idx;
+            const btns = document.querySelectorAll('.answer-btn');
+            btns.forEach((b, i) => {
+                if (i === quizData[currentQuizQ].c) b.classList.add('correct');
+                else if (i === idx && !correct) b.classList.add('wrong');
+                b.disabled = true;
+            });
+            if (correct) quizScore++;
+            setTimeout(() => {
+                currentQuizQ++;
+                if (currentQuizQ < quizData.length) showQuizQuestion();
+                else {
+                    document.getElementById('quizQuestion').textContent = `Final Score: ${quizScore}/${quizData.length}`;
+                    document.getElementById('quizAnswers').innerHTML = '<button class="btn" onclick="location.reload()">Restart</button>';
+                }
+            }, 1000);
+        }
+
+        function initCheckers() {
+            const board = document.getElementById('checkersBoard');
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const sq = document.createElement('div');
+                    sq.className = 'square ' + ((r + c) % 2 === 0 ? 'dark-sq' : 'light-sq');
+                    if ((r + c) % 2 === 1) {
+                        if (r < 3) {
+                            const piece = document.createElement('div');
+                            piece.className = 'piece white-piece';
+                            sq.appendChild(piece);
+                        } else if (r > 4) {
+                            const piece = document.createElement('div');
+                            piece.className = 'piece black-piece';
+                            sq.appendChild(piece);
+                        }
+                    }
+                    board.appendChild(sq);
+                }
+            }
+        }
+
+        function countText() {
+            const text = document.getElementById('textInput').value;
+            const stats = `<p>Characters: ${text.length}</p><p>Words: ${text.trim().split(/\s+/).filter(w => w).length}</p><p>Paragraphs: ${text.trim().split(/\n\n+/).filter(p => p).length}</p>`;
+            document.getElementById('textStats').innerHTML = stats;
+        }
+
+        function getRandomQuote() {
+            const q = quotes[Math.floor(Math.random() * quotes.length)];
+            document.getElementById('quoteText').textContent = '"' + q.text + '"';
+            document.getElementById('quoteAuthor').textContent = '— ' + q.author;
+        }
+
+        function convertTemp() {
+            const c = parseFloat(document.getElementById('celsius').value);
+            const f = (c * 9/5) + 32;
+            const k = c + 273.15;
+            const res = document.getElementById('convert-temperature');
+            res.innerHTML += `<div class="timestamp">${c}°C = ${f.toFixed(2)}°F = ${k.toFixed(2)}K</div>`;
+        }
+
+        function convertWeight() {
+            const kg = parseFloat(document.getElementById('kg').value);
+            const lbs = kg * 2.20462;
+            const oz = kg * 35.274;
+            const res = document.getElementById('convert-weight');
+            res.innerHTML += `<div class="timestamp">${kg}kg = ${lbs.toFixed(2)}lbs = ${oz.toFixed(2)}oz</div>`;
+        }
+
+        function convertLength() {
+            const m = parseFloat(document.getElementById('meters').value);
+            const ft = m * 3.28084;
+            const mi = m * 0.000621371;
+            const res = document.getElementById('convert-length');
+            res.innerHTML += `<div class="timestamp">${m}m = ${ft.toFixed(2)}ft = ${mi.toFixed(6)}mi</div>`;
+        }
+
+        async function handleOCR(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const result = document.getElementById('ocrResult');
+            result.innerHTML = '<p style="color: var(--text-muted);">Processing...</p>';
+            try {
+                const { createWorker } = Tesseract;
+                const worker = await createWorker('eng');
+                const { data } = await worker.recognize(file);
+                result.innerHTML = `<h3>Text Found:</h3><p>${data.text}</p>`;
+                await worker.terminate();
+            } catch (e) {
+                result.innerHTML = '<p class="error">OCR Error: ' + e.message + '</p>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const theme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', theme);
+            initHome();
+            initCalc();
+            initTime();
+            initTicTac();
+            initCheckers();
+            initQuiz();
+            getRandomQuote();
+        });
     </script>
 </body>
 </html>
